@@ -6,7 +6,7 @@ Act runner is a runner for Gitea based on [Gitea fork](https://gitea.com/gitea/a
 
 ### Prerequisites
 
-Docker Engine Community version is required. To install Docker CE, follow the official [install instructions](https://docs.docker.com/engine/install/).
+Docker Engine Community version is required for docker mode. To install Docker CE, follow the official [install instructions](https://docs.docker.com/engine/install/).
 
 ### Download pre-built binary
 
@@ -16,6 +16,12 @@ Visit https://dl.gitea.com/act_runner/ and download the right version for your p
 
 ```bash
 make build
+```
+
+### Build a docker image
+
+```bash
+make docker
 ```
 
 ## Quickstart
@@ -66,7 +72,6 @@ If the registry succeed, it will run immediately. Next time, you could run the r
 ./act_runner daemon
 ```
 
-
 ### Configuration
 
 You can also configure the runner with a configuration file.
@@ -81,4 +86,10 @@ You can specify the configuration file path with `-c`/`--config` argument.
 ```bash
 ./act_runner -c config.yaml register # register with config file
 ./act_runner -c config.yaml deamon # run with config file
+```
+
+### Run a docker container
+
+```sh
+docker run -e GITEA_INSTANCE_URL=http://192.168.8.18:3000 -e GITEA_RUNNER_REGISTRATION_TOKEN=<runner_token> -v /var/run/docker.sock:/var/run/docker.sock --name my_runner gitea/act_runner:nightly
 ```

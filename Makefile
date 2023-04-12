@@ -16,6 +16,10 @@ WINDOWS_ARCHS ?= windows/amd64
 GO_FMT_FILES := $(shell find . -type f -name "*.go" ! -name "generated.*")
 GOFILES := $(shell find . -type f -name "*.go" -o -name "go.mod" ! -name "generated.*")
 
+DOCKER_IMAGE ?= gitea/act_runner
+DOCKER_TAG ?= nightly
+DOCKER_REF := $(DOCKER_IMAGE):$(DOCKER_TAG)
+
 ifneq ($(shell uname), Darwin)
 	EXTLDFLAGS = -extldflags "-static" $(null)
 else
@@ -155,6 +159,10 @@ release-check: | $(DIST_DIRS)
 .PHONY: release-compress
 release-compress: | $(DIST_DIRS)
 	cd $(DIST)/release/; for file in `find . -type f -name "*"`; do echo "compressing $${file}" && $(GO) run $(GXZ_PAGAGE) -k -9 $${file}; done;
+
+.PHONY: docker
+docker:
+	docker build --disable-content-trust=false -t $(DOCKER_REF) .
 
 clean:
 	$(GO) clean -x -i ./...
