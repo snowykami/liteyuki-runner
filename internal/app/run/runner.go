@@ -65,6 +65,10 @@ func NewRunner(cfg *config.Config, reg *config.Registration, cli client.Client) 
 	artifactGiteaAPI := strings.TrimSuffix(cli.Address(), "/") + "/api/actions_pipeline/"
 	envs["ACTIONS_RUNTIME_URL"] = artifactGiteaAPI
 
+	// Set specific environments to distinguish between Gitea and GitHub
+	envs["GITEA_ACTIONS"] = "true"
+	envs["GITEA_ACTIONS_RUNNER_VERSION"] = ver.Version()
+
 	return &Runner{
 		name:   reg.Name,
 		cfg:    cfg,
