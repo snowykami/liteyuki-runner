@@ -103,5 +103,9 @@ snapshot:
 nightly:
   name_template: "{{ .Branch }}"
 
+gitea_urls:
+  api: https://gitea.com/api/v1
+  download: https://gitea.com
+
 # yaml-language-server: $schema=https://goreleaser.com/static/schema-pro.json
 # vim: set ts=2 sw=2 tw=0 fo=cnqoj
