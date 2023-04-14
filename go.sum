@@ -4,8 +4,8 @@ code.gitea.io/actions-proto-go v0.2.0 h1:nYh9nhhfk67YA4wVNLsCzd//RCvXnljwXClJ33+
 code.gitea.io/actions-proto-go v0.2.0/go.mod h1:00ys5QDo1iHN1tHNvvddAcy2W/g+425hQya1cCSvq9A=
 code.gitea.io/gitea-vet v0.2.3-0.20230113022436-2b1561217fa5 h1:daBEK2GQeqGikJESctP5Cu1i33z5ztAD4kyQWiw185M=
 code.gitea.io/gitea-vet v0.2.3-0.20230113022436-2b1561217fa5/go.mod h1:zcNbT/aJEmivCAhfmkHOlT645KNOf9W2KnkLgFjGGfE=
-gitea.com/gitea/act v0.243.2-0.20230323041428-929ea6df751b h1:AFuo+/Avbvo4JAId/K0rb0RHh/OQfFGMfQQWQ5SQcNA=
-gitea.com/gitea/act v0.243.2-0.20230323041428-929ea6df751b/go.mod h1:iLHCXqOPUElA2nSyHo4wtxSmvdkym3WU7CkP3AxF39Q=
+gitea.com/gitea/act v0.243.2-0.20230414074203-ac1ba34518bc h1:+aPsIKh2vrE/+QJlg5bRMYp79sfTiGcbU7ux4aWIy9s=
+gitea.com/gitea/act v0.243.2-0.20230414074203-ac1ba34518bc/go.mod h1:mabw6AZAiDgxGlK83orWLrNERSPvgBJzEUS3S7u2bHI=
 gitea.com/xorm/sqlfiddle v0.0.0-20180821085327-62ce714f951a h1:lSA0F4e9A2NcQSqGqTOXqu2aRi/XEQxDCBwM8yJtE6s=
 gitea.com/xorm/sqlfiddle v0.0.0-20180821085327-62ce714f951a/go.mod h1:EXuID2Zs0pAQhH8yz+DNjUbjppKQzKFAn28TMYPB6IU=
 gitee.com/travelliu/dm v1.8.11192/go.mod h1:DHTzyhCrM843x9VdKVbZ+GKXGRbKM2sJ4LxihRxShkE=
