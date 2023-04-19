@@ -4,7 +4,6 @@ on:
   - pull_request
 
 env:
-  GOPROXY: https://goproxy.io,direct
   GOPATH: /go_path
   GOCACHE: /go_cache
 
@@ -13,28 +12,24 @@ jobs:
     name: check and test
     runs-on: ubuntu-latest
     steps:
-      - name: cache go path
-        id: cache-go-path
-        uses: https://github.com/actions/cache@v3
-        with:
-          path: /go_path
-          key: go_path-${{ github.repository }}-${{ github.ref_name }}
-          restore-keys: |
-            go_path-${{ github.repository }}-
-            go_path-            
-      - name: cache go cache
-        id: cache-go-cache
-        uses: https://github.com/actions/cache@v3
-        with:
-          path: /go_cache
-          key: go_cache-${{ github.repository }}-${{ github.ref_name }}
-          restore-keys: |
-            go_cache-${{ github.repository }}-
-            go_cache-    
+      - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
         with:
-          go-version: 1.20
-      - uses: actions/checkout@v3
+          go-version: '>=1.20.1'
+      - uses: https://gitea.com/actions/go-hashfiles@v0.0.1
+        id: hash-go
+        with:
+          patterns: |
+            go.mod
+            go.sum
+      - name: cache go
+        id: cache-go
+        uses: https://github.com/actions/cache@v3
+        with:
+          path: |
+            /go_path
+            /go_cache
+          key: go_path-${{ steps.hash-go.outputs.hash }}
       - name: vet checks
         run: make vet
       - name: build
