@@ -184,7 +184,7 @@ func (r *Reporter) Close(lastWords string) error {
 			Time:    timestamppb.Now(),
 			Content: lastWords,
 		})
-		return nil
+		r.state.StoppedAt = timestamppb.Now()
 	} else if lastWords != "" {
 		r.logRows = append(r.logRows, &runnerv1.LogRow{
 			Time:    timestamppb.Now(),
