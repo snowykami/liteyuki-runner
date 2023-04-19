@@ -108,4 +108,4 @@ require (
 	modernc.org/token v1.0.0 // indirect
 )
 
-replace github.com/nektos/act => gitea.com/gitea/act v0.243.2-0.20230414074203-ac1ba34518bc
+replace github.com/nektos/act => gitea.com/gitea/act v0.243.2-0.20230419032328-d3a56cdb696b
