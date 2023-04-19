@@ -3,7 +3,7 @@ module gitea.com/gitea/act_runner
 go 1.20
 
 require (
-	code.gitea.io/actions-proto-go v0.2.0
+	code.gitea.io/actions-proto-go v0.2.1
 	code.gitea.io/gitea-vet v0.2.3-0.20230113022436-2b1561217fa5
 	github.com/avast/retry-go/v4 v4.3.1
 	github.com/bufbuild/connect-go v1.3.1
@@ -108,4 +108,4 @@ require (
 	modernc.org/token v1.0.0 // indirect
 )
 
-replace github.com/nektos/act => gitea.com/gitea/act v0.243.2-0.20230419032328-d3a56cdb696b
+replace github.com/nektos/act => gitea.com/gitea/act v0.243.3
