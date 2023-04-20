@@ -4,7 +4,6 @@
 package run
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -112,16 +111,11 @@ func (r *Runner) run(ctx context.Context, task *runnerv1.Task, reporter *report.
 
 	reporter.Logf("%s(version:%s) received task %v of job %v, be triggered by event: %s", r.name, ver.Version(), task.Id, task.Context.Fields["job"].GetStringValue(), task.Context.Fields["event_name"].GetStringValue())
 
-	workflow, err := model.ReadWorkflow(bytes.NewReader(task.WorkflowPayload))
+	workflow, jobID, err := generateWorkflow(task)
 	if err != nil {
 		return err
 	}
 
-	jobIDs := workflow.GetJobIDs()
-	if len(jobIDs) != 1 {
-		return fmt.Errorf("multiple jobs found: %v", jobIDs)
-	}
-	jobID := jobIDs[0]
 	plan, err := model.CombineWorkflowPlanner(workflow).PlanJob(jobID)
 	if err != nil {
 		return err
@@ -209,5 +203,7 @@ func (r *Runner) run(ctx context.Context, task *runnerv1.Task, reporter *report.
 	// add logger recorders
 	ctx = common.WithLoggerHook(ctx, reporter)
 
-	return executor(ctx)
+	execErr := executor(ctx)
+	reporter.SetOutputs(job.Outputs)
+	return execErr
 }

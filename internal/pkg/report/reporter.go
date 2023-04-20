@@ -31,8 +31,10 @@ type Reporter struct {
 	logOffset   int
 	logRows     []*runnerv1.LogRow
 	logReplacer *strings.Replacer
-	state       *runnerv1.TaskState
-	stateM      sync.RWMutex
+
+	state   *runnerv1.TaskState
+	stateMu sync.RWMutex
+	outputs sync.Map
 }
 
 func NewReporter(ctx context.Context, cancel context.CancelFunc, client client.Client, task *runnerv1.Task) *Reporter {
@@ -56,8 +58,8 @@ func NewReporter(ctx context.Context, cancel context.CancelFunc, client client.C
 }
 
 func (r *Reporter) ResetSteps(l int) {
-	r.stateM.Lock()
-	defer r.stateM.Unlock()
+	r.stateMu.Lock()
+	defer r.stateMu.Unlock()
 	for i := 0; i < l; i++ {
 		r.state.Steps = append(r.state.Steps, &runnerv1.StepState{
 			Id: int64(i),
@@ -70,8 +72,8 @@ func (r *Reporter) Levels() []log.Level {
 }
 
 func (r *Reporter) Fire(entry *log.Entry) error {
-	r.stateM.Lock()
-	defer r.stateM.Unlock()
+	r.stateMu.Lock()
+	defer r.stateMu.Unlock()
 
 	log.WithFields(entry.Data).Trace(entry.Message)
 
@@ -155,9 +157,13 @@ func (r *Reporter) RunDaemon() {
 }
 
 func (r *Reporter) Logf(format string, a ...interface{}) {
-	r.stateM.Lock()
-	defer r.stateM.Unlock()
+	r.stateMu.Lock()
+	defer r.stateMu.Unlock()
 
+	r.logf(format, a...)
+}
+
+func (r *Reporter) logf(format string, a ...interface{}) {
 	if !r.duringSteps() {
 		r.logRows = append(r.logRows, &runnerv1.LogRow{
 			Time:    timestamppb.Now(),
@@ -166,10 +172,30 @@ func (r *Reporter) Logf(format string, a ...interface{}) {
 	}
 }
 
+func (r *Reporter) SetOutputs(outputs map[string]string) {
+	r.stateMu.Lock()
+	defer r.stateMu.Unlock()
+
+	for k, v := range outputs {
+		if len(k) > 255 {
+			r.logf("ignore output because the key is too long: %q", k)
+			continue
+		}
+		if l := len(v); l > 1024*1024 {
+			log.Println("ignore output because the value is too long:", k, l)
+			r.logf("ignore output because the value %q is too long: %d", k, l)
+		}
+		if _, ok := r.outputs.Load(k); ok {
+			continue
+		}
+		r.outputs.Store(k, v)
+	}
+}
+
 func (r *Reporter) Close(lastWords string) error {
 	r.closed = true
 
-	r.stateM.Lock()
+	r.stateMu.Lock()
 	if r.state.Result == runnerv1.Result_RESULT_UNSPECIFIED {
 		if lastWords == "" {
 			lastWords = "Early termination"
@@ -191,7 +217,7 @@ func (r *Reporter) Close(lastWords string) error {
 			Content: lastWords,
 		})
 	}
-	r.stateM.Unlock()
+	r.stateMu.Unlock()
 
 	return retry.Do(func() error {
 		if err := r.ReportLog(true); err != nil {
@@ -205,9 +231,9 @@ func (r *Reporter) ReportLog(noMore bool) error {
 	r.clientM.Lock()
 	defer r.clientM.Unlock()
 
-	r.stateM.RLock()
+	r.stateMu.RLock()
 	rows := r.logRows
-	r.stateM.RUnlock()
+	r.stateMu.RUnlock()
 
 	resp, err := r.client.UpdateLog(r.ctx, connect.NewRequest(&runnerv1.UpdateLogRequest{
 		TaskId: r.state.Id,
@@ -224,10 +250,10 @@ func (r *Reporter) ReportLog(noMore bool) error {
 		return fmt.Errorf("submitted logs are lost")
 	}
 
-	r.stateM.Lock()
+	r.stateMu.Lock()
 	r.logRows = r.logRows[ack-r.logOffset:]
 	r.logOffset = ack
-	r.stateM.Unlock()
+	r.stateMu.Unlock()
 
 	if noMore && ack < r.logOffset+len(rows) {
 		return fmt.Errorf("not all logs are submitted")
@@ -240,19 +266,43 @@ func (r *Reporter) ReportState() error {
 	r.clientM.Lock()
 	defer r.clientM.Unlock()
 
-	r.stateM.RLock()
+	r.stateMu.RLock()
 	state := proto.Clone(r.state).(*runnerv1.TaskState)
-	r.stateM.RUnlock()
+	r.stateMu.RUnlock()
+
+	outputs := make(map[string]string)
+	r.outputs.Range(func(k, v interface{}) bool {
+		if val, ok := v.(string); ok {
+			outputs[k.(string)] = val
+		}
+		return true
+	})
 
 	resp, err := r.client.UpdateTask(r.ctx, connect.NewRequest(&runnerv1.UpdateTaskRequest{
-		State: state,
+		State:   state,
+		Outputs: outputs,
 	}))
 	if err != nil {
 		return err
 	}
 
+	for _, k := range resp.Msg.SentOutputs {
+		r.outputs.Store(k, struct{}{})
+	}
+
 	if resp.Msg.State != nil && resp.Msg.State.Result == runnerv1.Result_RESULT_CANCELLED {
 		r.cancel()
+	}
+
+	var noSent []string
+	r.outputs.Range(func(k, v interface{}) bool {
+		if _, ok := v.(string); ok {
+			noSent = append(noSent, k.(string))
+		}
+		return true
+	})
+	if len(noSent) > 0 {
+		return fmt.Errorf("there are still outputs that have not been sent: %v", noSent)
 	}
 
 	return nil
