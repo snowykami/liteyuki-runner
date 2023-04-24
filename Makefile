@@ -162,7 +162,10 @@ release-compress: | $(DIST_DIRS)
 
 .PHONY: docker
 docker:
-	docker build --disable-content-trust=false -t $(DOCKER_REF) .
+	if ! docker buildx version >/dev/null 2>&1; then \
+		ARG_DISABLE_CONTENT_TRUST=--disable-content-trust=false; \
+	fi; \
+	docker build $${ARG_DISABLE_CONTENT_TRUST} -t $(DOCKER_REF) .
 
 clean:
 	$(GO) clean -x -i ./...
