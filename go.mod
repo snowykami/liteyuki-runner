@@ -12,6 +12,7 @@ require (
 	github.com/go-chi/render v1.0.2
 	github.com/joho/godotenv v1.5.1
 	github.com/mattn/go-isatty v0.0.17
+	github.com/mattn/go-sqlite3 v1.14.9
 	github.com/nektos/act v0.0.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.6.1
