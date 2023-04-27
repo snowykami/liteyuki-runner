@@ -74,7 +74,7 @@ jobs:
         id: meta
         run: |
           echo REPO_NAME=$(echo ${GITHUB_REPOSITORY} | awk -F"/" '{print $2}') >> $GITHUB_OUTPUT
-          echo REPO_VERSION=$(git describe --tags --always) >> $GITHUB_OUTPUT          
+          echo REPO_VERSION=$(git describe --tags --always | sed 's/^v//') >> $GITHUB_OUTPUT
 
       - name: Build and push
         uses: docker/build-push-action@v4
@@ -88,6 +88,5 @@ jobs:
             linux/arm64
           push: true
           tags: |
-            ${{ env.DOCKER_ORG }}/${{ steps.meta.outputs.REPO_NAME }}:${{ steps.meta.outputs.REPO_VERSION }}
             ${{ env.DOCKER_ORG }}/${{ steps.meta.outputs.REPO_NAME }}:${{ env.DOCKER_LATEST }}
 
