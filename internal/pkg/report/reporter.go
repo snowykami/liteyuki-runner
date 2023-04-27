@@ -6,6 +6,7 @@ package report
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -31,10 +32,14 @@ type Reporter struct {
 	logOffset   int
 	logRows     []*runnerv1.LogRow
 	logReplacer *strings.Replacer
+	oldnew      []string
 
 	state   *runnerv1.TaskState
 	stateMu sync.RWMutex
 	outputs sync.Map
+
+	debugOutputEnabled  bool
+	stopCommandEndToken string
 }
 
 func NewReporter(ctx context.Context, cancel context.CancelFunc, client client.Client, task *runnerv1.Task) *Reporter {
@@ -46,15 +51,22 @@ func NewReporter(ctx context.Context, cancel context.CancelFunc, client client.C
 		oldnew = append(oldnew, v, "***")
 	}
 
-	return &Reporter{
+	rv := &Reporter{
 		ctx:         ctx,
 		cancel:      cancel,
 		client:      client,
+		oldnew:      oldnew,
 		logReplacer: strings.NewReplacer(oldnew...),
 		state: &runnerv1.TaskState{
 			Id: task.Id,
 		},
 	}
+
+	if task.Secrets["ACTIONS_STEP_DEBUG"] == "true" {
+		rv.debugOutputEnabled = true
+	}
+
+	return rv
 }
 
 func (r *Reporter) ResetSteps(l int) {
@@ -69,6 +81,13 @@ func (r *Reporter) ResetSteps(l int) {
 
 func (r *Reporter) Levels() []log.Level {
 	return log.AllLevels
+}
+
+func appendIfNotNil[T any](s []*T, v *T) []*T {
+	if v != nil {
+		return append(s, v)
+	}
+	return s
 }
 
 func (r *Reporter) Fire(entry *log.Entry) error {
@@ -97,7 +116,7 @@ func (r *Reporter) Fire(entry *log.Entry) error {
 			}
 		}
 		if !r.duringSteps() {
-			r.logRows = append(r.logRows, r.parseLogRow(entry))
+			r.logRows = appendIfNotNil(r.logRows, r.parseLogRow(entry))
 		}
 		return nil
 	}
@@ -110,7 +129,7 @@ func (r *Reporter) Fire(entry *log.Entry) error {
 	}
 	if step == nil {
 		if !r.duringSteps() {
-			r.logRows = append(r.logRows, r.parseLogRow(entry))
+			r.logRows = appendIfNotNil(r.logRows, r.parseLogRow(entry))
 		}
 		return nil
 	}
@@ -124,10 +143,10 @@ func (r *Reporter) Fire(entry *log.Entry) error {
 				step.LogIndex = int64(r.logOffset + len(r.logRows))
 			}
 			step.LogLength++
-			r.logRows = append(r.logRows, r.parseLogRow(entry))
+			r.logRows = appendIfNotNil(r.logRows, r.parseLogRow(entry))
 		}
 	} else if !r.duringSteps() {
-		r.logRows = append(r.logRows, r.parseLogRow(entry))
+		r.logRows = appendIfNotNil(r.logRows, r.parseLogRow(entry))
 	}
 	if v, ok := entry.Data["stepResult"]; ok {
 		if stepResult, ok := r.parseResult(v); ok {
@@ -338,11 +357,70 @@ func (r *Reporter) parseResult(result interface{}) (runnerv1.Result, bool) {
 	return ret, ok
 }
 
+var cmdRegex = regexp.MustCompile(`^::([^ :]+)( .*)?::(.*)$`)
+
+func (r *Reporter) handleCommand(originalContent, command, parameters, value string) *string {
+	if r.stopCommandEndToken != "" && command != r.stopCommandEndToken {
+		return &originalContent
+	}
+
+	switch command {
+	case "add-mask":
+		r.addMask(value)
+		return nil
+	case "debug":
+		if r.debugOutputEnabled {
+			return &value
+		}
+		return nil
+
+	case "notice":
+		// Not implemented yet, so just return the original content.
+		return &originalContent
+	case "warning":
+		// Not implemented yet, so just return the original content.
+		return &originalContent
+	case "error":
+		// Not implemented yet, so just return the original content.
+		return &originalContent
+	case "group":
+		// Returning the original content, because I think the frontend
+		// will use it when rendering the output.
+		return &originalContent
+	case "endgroup":
+		// Ditto
+		return &originalContent
+	case "stop-commands":
+		r.stopCommandEndToken = value
+		return nil
+	case r.stopCommandEndToken:
+		r.stopCommandEndToken = ""
+		return nil
+	}
+	return &originalContent
+}
+
 func (r *Reporter) parseLogRow(entry *log.Entry) *runnerv1.LogRow {
 	content := strings.TrimRightFunc(entry.Message, func(r rune) bool { return r == '\r' || r == '\n' })
+
+	matches := cmdRegex.FindStringSubmatch(content)
+	if matches != nil {
+		if output := r.handleCommand(content, matches[1], matches[2], matches[3]); output != nil {
+			content = *output
+		} else {
+			return nil
+		}
+	}
+
 	content = r.logReplacer.Replace(content)
+
 	return &runnerv1.LogRow{
 		Time:    timestamppb.New(entry.Time),
 		Content: content,
 	}
+}
+
+func (r *Reporter) addMask(msg string) {
+	r.oldnew = append(r.oldnew, msg, "***")
+	r.logReplacer = strings.NewReplacer(r.oldnew...)
 }
