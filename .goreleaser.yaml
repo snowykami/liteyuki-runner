@@ -101,7 +101,7 @@ snapshot:
   name_template: "{{ .Branch }}-devel"
 
 nightly:
-  name_template: "{{ .Branch }}"
+  name_template: "nightly"
 
 gitea_urls:
   api: https://gitea.com/api/v1
