@@ -72,6 +72,7 @@ builds:
   hooks:
     post:
       - cmd: tar -cJf {{ .Path }}.xz {{ .Path }}
+        dir: ./dist/
         env:
           - XZ_OPT=-9
       - cmd: sh .goreleaser.checksum.sh {{ .Path }}
