@@ -34,9 +34,10 @@ type Config struct {
 		Port    uint16 `yaml:"port"`
 	} `yaml:"cache"`
 	Container struct {
-		NetworkMode string `yaml:"network_mode"`
-		Privileged  bool   `yaml:"privileged"`
-		Options     string `yaml:"options"`
+		NetworkMode   string `yaml:"network_mode"`
+		Privileged    bool   `yaml:"privileged"`
+		Options       string `yaml:"options"`
+		WorkdirParent string `yaml:"workdir_parent"`
 	} `yaml:"container"`
 }
 
@@ -93,6 +94,9 @@ func LoadDefault(file string) (*Config, error) {
 	}
 	if cfg.Container.NetworkMode == "" {
 		cfg.Container.NetworkMode = "bridge"
+	}
+	if cfg.Container.WorkdirParent == "" {
+		cfg.Container.WorkdirParent = "workspace"
 	}
 	if cfg.Runner.FetchTimeout <= 0 {
 		cfg.Runner.FetchTimeout = 5 * time.Second

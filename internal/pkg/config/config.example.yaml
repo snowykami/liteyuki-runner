@@ -48,3 +48,6 @@ container:
   privileged: false
   # And other options to be used when the container is started (eg, --add-host=my.gitea.url:host-gateway).
   options:
+  # The parent directory of a job's working directory.
+  # If it's empty, /workspace will be used.
+  workdir_parent:
