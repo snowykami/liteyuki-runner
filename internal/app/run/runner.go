@@ -190,6 +190,7 @@ func (r *Runner) run(ctx context.Context, task *runnerv1.Task, reporter *report.
 		Privileged:            r.cfg.Container.Privileged,
 		DefaultActionInstance: taskContext["gitea_default_actions_url"].GetStringValue(),
 		PlatformPicker:        r.labels.PickPlatform,
+		Vars:                  task.Vars,
 	}
 
 	rr, err := runner.New(runnerConfig)
