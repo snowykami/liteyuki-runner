@@ -58,6 +58,11 @@ jobs:
         with:
           fetch-depth: 0 # all history for all branches and tags
 
+      - name: dockerfile lint check
+        uses: https://github.com/hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
 
