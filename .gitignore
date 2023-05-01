@@ -8,3 +8,5 @@ coverage.txt
 # MS VSCode
 .vscode
 __debug_bin
+# gorelease binary folder
+dist

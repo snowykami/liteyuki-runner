@@ -71,10 +71,8 @@ builds:
   no_unique_dist_dir: true
   hooks:
     post:
-      - cmd: tar -cJf {{ .Path }}.xz {{ .Path }}
+      - cmd: xz -k -9 {{ .Path }}
         dir: ./dist/
-        env:
-          - XZ_OPT=-9
       - cmd: sh .goreleaser.checksum.sh {{ .Path }}
       - cmd: sh .goreleaser.checksum.sh {{ .Path }}.xz
 
