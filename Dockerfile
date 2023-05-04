@@ -1,5 +1,5 @@
 FROM golang:1.20-alpine3.17 as builder
-RUN apk add --no-cache make=4.3-r1 git=2.38.5-r0
+RUN apk add --no-cache make=4.3-r1
 
 COPY . /opt/src/act_runner
 WORKDIR /opt/src/act_runner

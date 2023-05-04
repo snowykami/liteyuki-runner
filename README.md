@@ -10,7 +10,7 @@ Docker Engine Community version is required for docker mode. To install Docker C
 
 ### Download pre-built binary
 
-Visit https://dl.gitea.com/act_runner/ and download the right version for your platform.
+Visit [here](https://dl.gitea.com/act_runner/) and download the right version for your platform.
 
 ### Build from source
 
