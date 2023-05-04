@@ -13,12 +13,12 @@ import (
 	"time"
 
 	runnerv1 "code.gitea.io/actions-proto-go/runner/v1"
+	"github.com/nektos/act/pkg/artifactcache"
 	"github.com/nektos/act/pkg/common"
 	"github.com/nektos/act/pkg/model"
 	"github.com/nektos/act/pkg/runner"
 	log "github.com/sirupsen/logrus"
 
-	"gitea.com/gitea/act_runner/internal/app/artifactcache"
 	"gitea.com/gitea/act_runner/internal/pkg/client"
 	"gitea.com/gitea/act_runner/internal/pkg/config"
 	"gitea.com/gitea/act_runner/internal/pkg/labels"
@@ -51,7 +51,12 @@ func NewRunner(cfg *config.Config, reg *config.Registration, cli client.Client) 
 		envs[k] = v
 	}
 	if cfg.Cache.Enabled == nil || *cfg.Cache.Enabled {
-		cacheHandler, err := artifactcache.StartHandler(cfg.Cache.Dir, cfg.Cache.Host, cfg.Cache.Port)
+		cacheHandler, err := artifactcache.StartHandler(
+			cfg.Cache.Dir,
+			cfg.Cache.Host,
+			cfg.Cache.Port,
+			log.StandardLogger().WithField("module", "cache_request"),
+		)
 		if err != nil {
 			log.Errorf("cannot init cache server, it will be disabled: %v", err)
 			// go on
