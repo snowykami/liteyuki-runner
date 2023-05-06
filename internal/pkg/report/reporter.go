@@ -139,11 +139,13 @@ func (r *Reporter) Fire(entry *log.Entry) error {
 	}
 	if v, ok := entry.Data["raw_output"]; ok {
 		if rawOutput, ok := v.(bool); ok && rawOutput {
-			if step.LogLength == 0 {
-				step.LogIndex = int64(r.logOffset + len(r.logRows))
+			if row := r.parseLogRow(entry); row != nil {
+				if step.LogLength == 0 {
+					step.LogIndex = int64(r.logOffset + len(r.logRows))
+				}
+				step.LogLength++
+				r.logRows = append(r.logRows, row)
 			}
-			step.LogLength++
-			r.logRows = appendIfNotNil(r.logRows, r.parseLogRow(entry))
 		}
 	} else if !r.duringSteps() {
 		r.logRows = appendIfNotNil(r.logRows, r.parseLogRow(entry))

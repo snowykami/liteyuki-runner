@@ -4,11 +4,19 @@
 package report
 
 import (
+	"context"
 	"strings"
 	"testing"
 
+	runnerv1 "code.gitea.io/actions-proto-go/runner/v1"
+	connect_go "github.com/bufbuild/connect-go"
 	log "github.com/sirupsen/logrus"
-	"gotest.tools/v3/assert"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/structpb"
+
+	"gitea.com/gitea/act_runner/internal/pkg/client/mocks"
 )
 
 func TestReporter_parseLogRow(t *testing.T) {
@@ -145,4 +153,45 @@ func TestReporter_parseLogRow(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestReporter_Fire(t *testing.T) {
+	t.Run("ignore command lines", func(t *testing.T) {
+		client := mocks.NewClient(t)
+		client.On("UpdateLog", mock.Anything, mock.Anything).Return(func(_ context.Context, req *connect_go.Request[runnerv1.UpdateLogRequest]) (*connect_go.Response[runnerv1.UpdateLogResponse], error) {
+			t.Logf("Received UpdateLog: %s", req.Msg.String())
+			return connect_go.NewResponse(&runnerv1.UpdateLogResponse{
+				AckIndex: req.Msg.Index + int64(len(req.Msg.Rows)),
+			}), nil
+		})
+		client.On("UpdateTask", mock.Anything, mock.Anything).Return(func(_ context.Context, req *connect_go.Request[runnerv1.UpdateTaskRequest]) (*connect_go.Response[runnerv1.UpdateTaskResponse], error) {
+			t.Logf("Received UpdateTask: %s", req.Msg.String())
+			return connect_go.NewResponse(&runnerv1.UpdateTaskResponse{}), nil
+		})
+		ctx, cancel := context.WithCancel(context.Background())
+		taskCtx, err := structpb.NewStruct(map[string]interface{}{})
+		require.NoError(t, err)
+		reporter := NewReporter(ctx, cancel, client, &runnerv1.Task{
+			Context: taskCtx,
+		})
+		defer func() {
+			assert.NoError(t, reporter.Close(""))
+		}()
+		reporter.ResetSteps(5)
+
+		dataStep0 := map[string]interface{}{
+			"stage":      "Main",
+			"stepNumber": 0,
+			"raw_output": true,
+		}
+
+		assert.NoError(t, reporter.Fire(&log.Entry{Message: "regular log line", Data: dataStep0}))
+		assert.NoError(t, reporter.Fire(&log.Entry{Message: "::debug::debug log line", Data: dataStep0}))
+		assert.NoError(t, reporter.Fire(&log.Entry{Message: "regular log line", Data: dataStep0}))
+		assert.NoError(t, reporter.Fire(&log.Entry{Message: "::debug::debug log line", Data: dataStep0}))
+		assert.NoError(t, reporter.Fire(&log.Entry{Message: "::debug::debug log line", Data: dataStep0}))
+		assert.NoError(t, reporter.Fire(&log.Entry{Message: "regular log line", Data: dataStep0}))
+
+		assert.Equal(t, int64(3), reporter.state.Steps[0].LogLength)
+	})
 }

@@ -65,6 +65,9 @@ else
 	endif
 endif
 
+GO_PACKAGES_TO_VET ?= $(filter-out gitea.com/gitea/act_runner/internal/pkg/client/mocks,$(shell $(GO) list ./...))
+
+
 TAGS ?=
 LDFLAGS ?= -X "gitea.com/gitea/act_runner/internal/pkg/ver.version=$(RELASE_VERSION)"
 
@@ -105,7 +108,7 @@ test: fmt-check
 vet:
 	@echo "Running go vet..."
 	@$(GO) build code.gitea.io/gitea-vet
-	@$(GO) vet -vettool=gitea-vet ./...
+	@$(GO) vet -vettool=gitea-vet $(GO_PACKAGES_TO_VET)
 
 install: $(GOFILES)
 	$(GO) install -v -tags '$(TAGS)' -ldflags '$(EXTLDFLAGS)-s -w $(LDFLAGS)'
