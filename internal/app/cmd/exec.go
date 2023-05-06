@@ -313,7 +313,7 @@ func runExec(ctx context.Context, execArgs *executeArgs) func(cmd *cobra.Command
 
 		if len(execArgs.event) > 0 {
 			log.Infof("Using chosed event for filtering: %s", execArgs.event)
-			eventName = args[0]
+			eventName = execArgs.event
 		} else if len(events) == 1 && len(events[0]) > 0 {
 			log.Infof("Using the only detected workflow event: %s", events[0])
 			eventName = events[0]
@@ -391,12 +391,10 @@ func runExec(ctx context.Context, execArgs *executeArgs) func(cmd *cobra.Command
 			},
 		}
 
-		// TODO: handle log level config
-		// waiting https://gitea.com/gitea/act/pulls/19
-		// if !execArgs.debug {
-		// 	logLevel := log.Level(log.InfoLevel)
-		// 	config.JobLoggerLevel = &logLevel
-		// }
+		if !execArgs.debug {
+			logLevel := log.Level(log.InfoLevel)
+			config.JobLoggerLevel = &logLevel
+		}
 
 		r, err := runner.New(config)
 		if err != nil {
