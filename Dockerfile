@@ -8,10 +8,10 @@ RUN make clean && make build
 
 FROM alpine:3.17
 RUN apk add --no-cache \
-  git=2.38.5-r0 bash=5.2.15-r0 \
+  git=2.38.5-r0 bash=5.2.15-r0 tini=0.19.0-r1 \
   && rm -rf /var/cache/apk/*
 
 COPY --from=builder /opt/src/act_runner/act_runner /usr/local/bin/act_runner
 COPY run.sh /opt/act/run.sh
 
-ENTRYPOINT ["/opt/act/run.sh"]
+ENTRYPOINT ["/sbin/tini","--","/opt/act/run.sh"]
