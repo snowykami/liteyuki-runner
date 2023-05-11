@@ -85,7 +85,7 @@ You can specify the configuration file path with `-c`/`--config` argument.
 
 ```bash
 ./act_runner -c config.yaml register # register with config file
-./act_runner -c config.yaml deamon # run with config file
+./act_runner -c config.yaml daemon # run with config file
 ```
 
 ### Run a docker container
