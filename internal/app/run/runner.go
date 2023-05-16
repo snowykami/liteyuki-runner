@@ -13,6 +13,7 @@ import (
 	"time"
 
 	runnerv1 "code.gitea.io/actions-proto-go/runner/v1"
+	"github.com/docker/docker/api/types/container"
 	"github.com/nektos/act/pkg/artifactcache"
 	"github.com/nektos/act/pkg/common"
 	"github.com/nektos/act/pkg/model"
@@ -190,7 +191,7 @@ func (r *Runner) run(ctx context.Context, task *runnerv1.Task, reporter *report.
 		EventJSON:             string(eventJSON),
 		ContainerNamePrefix:   fmt.Sprintf("GITEA-ACTIONS-TASK-%d", task.Id),
 		ContainerMaxLifetime:  maxLifetime,
-		ContainerNetworkMode:  r.cfg.Container.NetworkMode,
+		ContainerNetworkMode:  container.NetworkMode(r.cfg.Container.Network),
 		ContainerOptions:      r.cfg.Container.Options,
 		Privileged:            r.cfg.Container.Privileged,
 		DefaultActionInstance: taskContext["gitea_default_actions_url"].GetStringValue(),

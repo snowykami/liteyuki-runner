@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
 
@@ -34,7 +35,8 @@ type Config struct {
 		Port    uint16 `yaml:"port"`
 	} `yaml:"cache"`
 	Container struct {
-		NetworkMode   string `yaml:"network_mode"`
+		Network       string `yaml:"network"`
+		NetworkMode   string `yaml:"network_mode"` // Deprecated: use Network instead. Could be removed after Gitea 1.20
 		Privileged    bool   `yaml:"privileged"`
 		Options       string `yaml:"options"`
 		WorkdirParent string `yaml:"workdir_parent"`
@@ -92,9 +94,6 @@ func LoadDefault(file string) (*Config, error) {
 			cfg.Cache.Dir = filepath.Join(home, ".cache", "actcache")
 		}
 	}
-	if cfg.Container.NetworkMode == "" {
-		cfg.Container.NetworkMode = "bridge"
-	}
 	if cfg.Container.WorkdirParent == "" {
 		cfg.Container.WorkdirParent = "workspace"
 	}
@@ -103,6 +102,19 @@ func LoadDefault(file string) (*Config, error) {
 	}
 	if cfg.Runner.FetchInterval <= 0 {
 		cfg.Runner.FetchInterval = 2 * time.Second
+	}
+
+	// although `container.network_mode` will be deprecated, but we have to be compatible with it for now.
+	if cfg.Container.NetworkMode != "" && cfg.Container.Network == "" {
+		log.Warn("You are trying to use deprecated configuration item of `container.network_mode`, please use `container.network` instead.")
+		if cfg.Container.NetworkMode == "bridge" {
+			// Previously, if the value of `container.network_mode` is `bridge`, we will create a new network for job.
+			// But “bridge” is easily confused with the bridge network created by Docker by default.
+			// So we set the value of `container.network` to empty string to make `act_runner` automatically create a new network for job.
+			cfg.Container.Network = ""
+		} else {
+			cfg.Container.Network = cfg.Container.NetworkMode
+		}
 	}
 
 	return cfg, nil
