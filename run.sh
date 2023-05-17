@@ -41,5 +41,7 @@ if [[ ! -s .runner ]]; then
     fi
   done
 fi
+# Prevent reading the token from the act_runner process
+unset GITEA_RUNNER_REGISTRATION_TOKEN
 
 act_runner daemon ${CONFIG_ARG}
