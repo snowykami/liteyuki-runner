@@ -57,6 +57,7 @@ type executeArgs struct {
 	dryrun                bool
 	image                 string
 	cacheHandler          *artifactcache.Handler
+	network               string
 }
 
 // WorkflowsPath returns path to workflow file(s)
@@ -385,7 +386,7 @@ func runExec(ctx context.Context, execArgs *executeArgs) func(cmd *cobra.Command
 			// EventJSON:             string(eventJSON),
 			ContainerNamePrefix:   fmt.Sprintf("GITEA-ACTIONS-TASK-%s", eventName),
 			ContainerMaxLifetime:  maxLifetime,
-			ContainerNetworkMode:  container.NetworkMode("bridge"),
+			ContainerNetworkMode:  container.NetworkMode(execArgs.network),
 			DefaultActionInstance: execArgs.defaultActionsUrl,
 			PlatformPicker: func(_ []string) string {
 				return execArgs.image
@@ -464,6 +465,7 @@ func loadExecCmd(ctx context.Context) *cobra.Command {
 	execCmd.PersistentFlags().BoolVarP(&execArg.debug, "debug", "d", false, "enable debug log")
 	execCmd.PersistentFlags().BoolVarP(&execArg.dryrun, "dryrun", "n", false, "dryrun mode")
 	execCmd.PersistentFlags().StringVarP(&execArg.image, "image", "i", "node:16-bullseye", "docker image to use")
+	execCmd.PersistentFlags().StringVarP(&execArg.network, "network", "", "", "Specify the network to which the container will connect")
 
 	return execCmd
 }
