@@ -14,33 +14,46 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// Log represents the configuration for logging.
+type Log struct {
+	Level string `yaml:"level"` // Level indicates the logging level.
+}
+
+// Runner represents the configuration for the runner.
+type Runner struct {
+	File          string            `yaml:"file"`           // File specifies the file path for the runner.
+	Capacity      int               `yaml:"capacity"`       // Capacity specifies the capacity of the runner.
+	Envs          map[string]string `yaml:"envs"`           // Envs stores environment variables for the runner.
+	EnvFile       string            `yaml:"env_file"`       // EnvFile specifies the path to the file containing environment variables for the runner.
+	Timeout       time.Duration     `yaml:"timeout"`        // Timeout specifies the duration for runner timeout.
+	Insecure      bool              `yaml:"insecure"`       // Insecure indicates whether the runner operates in an insecure mode.
+	FetchTimeout  time.Duration     `yaml:"fetch_timeout"`  // FetchTimeout specifies the timeout duration for fetching resources.
+	FetchInterval time.Duration     `yaml:"fetch_interval"` // FetchInterval specifies the interval duration for fetching resources.
+}
+
+// Cache represents the configuration for caching.
+type Cache struct {
+	Enabled *bool  `yaml:"enabled"` // Enabled indicates whether caching is enabled. It is a pointer to distinguish between false and not set. If not set, it will be true.
+	Dir     string `yaml:"dir"`     // Dir specifies the directory path for caching.
+	Host    string `yaml:"host"`    // Host specifies the caching host.
+	Port    uint16 `yaml:"port"`    // Port specifies the caching port.
+}
+
+// Container represents the configuration for the container.
+type Container struct {
+	Network       string `yaml:"network"`        // Network specifies the network for the container.
+	NetworkMode   string `yaml:"network_mode"`   // Deprecated: use Network instead. Could be removed after Gitea 1.20
+	Privileged    bool   `yaml:"privileged"`     // Privileged indicates whether the container runs in privileged mode.
+	Options       string `yaml:"options"`        // Options specifies additional options for the container.
+	WorkdirParent string `yaml:"workdir_parent"` // WorkdirParent specifies the parent directory for the container's working directory.
+}
+
+// Config represents the overall configuration.
 type Config struct {
-	Log struct {
-		Level string `yaml:"level"`
-	} `yaml:"log"`
-	Runner struct {
-		File          string            `yaml:"file"`
-		Capacity      int               `yaml:"capacity"`
-		Envs          map[string]string `yaml:"envs"`
-		EnvFile       string            `yaml:"env_file"`
-		Timeout       time.Duration     `yaml:"timeout"`
-		Insecure      bool              `yaml:"insecure"`
-		FetchTimeout  time.Duration     `yaml:"fetch_timeout"`
-		FetchInterval time.Duration     `yaml:"fetch_interval"`
-	} `yaml:"runner"`
-	Cache struct {
-		Enabled *bool  `yaml:"enabled"` // pointer to distinguish between false and not set, and it will be true if not set
-		Dir     string `yaml:"dir"`
-		Host    string `yaml:"host"`
-		Port    uint16 `yaml:"port"`
-	} `yaml:"cache"`
-	Container struct {
-		Network       string `yaml:"network"`
-		NetworkMode   string `yaml:"network_mode"` // Deprecated: use Network instead. Could be removed after Gitea 1.20
-		Privileged    bool   `yaml:"privileged"`
-		Options       string `yaml:"options"`
-		WorkdirParent string `yaml:"workdir_parent"`
-	} `yaml:"container"`
+	Log       Log       `yaml:"log"`       // Log represents the configuration for logging.
+	Runner    Runner    `yaml:"runner"`    // Runner represents the configuration for the runner.
+	Cache     Cache     `yaml:"cache"`     // Cache represents the configuration for caching.
+	Container Container `yaml:"container"` // Container represents the configuration for the container.
 }
 
 // LoadDefault returns the default configuration.

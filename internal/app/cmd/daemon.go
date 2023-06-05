@@ -7,6 +7,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path"
+	"runtime"
+	"strconv"
+	"strings"
 
 	"github.com/mattn/go-isatty"
 	log "github.com/sirupsen/logrus"
@@ -23,14 +27,13 @@ import (
 
 func runDaemon(ctx context.Context, configFile *string) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		log.Infoln("Starting runner daemon")
-
 		cfg, err := config.LoadDefault(*configFile)
 		if err != nil {
 			return fmt.Errorf("invalid configuration: %w", err)
 		}
 
 		initLogging(cfg)
+		log.Infoln("Starting runner daemon")
 
 		reg, err := config.LoadRegistration(cfg.Runner.File)
 		if os.IsNotExist(err) {
@@ -79,10 +82,11 @@ func runDaemon(ctx context.Context, configFile *string) func(cmd *cobra.Command,
 // initLogging setup the global logrus logger.
 func initLogging(cfg *config.Config) {
 	isTerm := isatty.IsTerminal(os.Stdout.Fd())
-	log.SetFormatter(&log.TextFormatter{
+	format := &log.TextFormatter{
 		DisableColors: !isTerm,
 		FullTimestamp: true,
-	})
+	}
+	log.SetFormatter(format)
 
 	if l := cfg.Log.Level; l != "" {
 		level, err := log.ParseLevel(l)
@@ -90,6 +94,22 @@ func initLogging(cfg *config.Config) {
 			log.WithError(err).
 				Errorf("invalid log level: %q", l)
 		}
+
+		// debug level
+		if level == log.DebugLevel {
+			log.SetReportCaller(true)
+			format.CallerPrettyfier = func(f *runtime.Frame) (string, string) {
+				// get function name
+				s := strings.Split(f.Function, ".")
+				funcname := "[" + s[len(s)-1] + "]"
+				// get file name and line number
+				_, filename := path.Split(f.File)
+				filename = "[" + filename + ":" + strconv.Itoa(f.Line) + "]"
+				return funcname, filename
+			}
+			log.SetFormatter(format)
+		}
+
 		if log.GetLevel() != level {
 			log.Infof("log level changed to %v", level)
 			log.SetLevel(level)
