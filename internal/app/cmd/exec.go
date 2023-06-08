@@ -39,7 +39,7 @@ type executeArgs struct {
 	envs                  []string
 	envfile               string
 	secrets               []string
-	defaultActionsUrl     string
+	defaultActionsUrls    []string
 	insecureSecrets       bool
 	privileged            bool
 	usernsMode            string
@@ -403,10 +403,10 @@ func runExec(ctx context.Context, execArgs *executeArgs) func(cmd *cobra.Command
 			NoSkipCheckout:     execArgs.noSkipCheckout,
 			// PresetGitHubContext:   preset,
 			// EventJSON:             string(eventJSON),
-			ContainerNamePrefix:   fmt.Sprintf("GITEA-ACTIONS-TASK-%s", eventName),
-			ContainerMaxLifetime:  maxLifetime,
-			ContainerNetworkMode:  container.NetworkMode(execArgs.network),
-			DefaultActionInstance: execArgs.defaultActionsUrl,
+			ContainerNamePrefix:  fmt.Sprintf("GITEA-ACTIONS-TASK-%s", eventName),
+			ContainerMaxLifetime: maxLifetime,
+			ContainerNetworkMode: container.NetworkMode(execArgs.network),
+			DefaultActionsURLs:   execArgs.defaultActionsUrls,
 			PlatformPicker: func(_ []string) string {
 				return execArgs.image
 			},
@@ -470,7 +470,7 @@ func loadExecCmd(ctx context.Context) *cobra.Command {
 	execCmd.PersistentFlags().StringVarP(&execArg.artifactServerPath, "artifact-server-path", "", ".", "Defines the path where the artifact server stores uploads and retrieves downloads from. If not specified the artifact server will not start.")
 	execCmd.PersistentFlags().StringVarP(&execArg.artifactServerAddr, "artifact-server-addr", "", "", "Defines the address where the artifact server listens")
 	execCmd.PersistentFlags().StringVarP(&execArg.artifactServerPort, "artifact-server-port", "", "34567", "Defines the port where the artifact server listens (will only bind to localhost).")
-	execCmd.PersistentFlags().StringVarP(&execArg.defaultActionsUrl, "default-actions-url", "", "https://gitea.com", "Defines the default url of action instance.")
+	execCmd.PersistentFlags().StringArrayVarP(&execArg.defaultActionsUrls, "default-actions-url", "", []string{"https://gitea.com", "https://github.com"}, "Defines the default url list of action instance.")
 	execCmd.PersistentFlags().BoolVarP(&execArg.noSkipCheckout, "no-skip-checkout", "", false, "Do not skip actions/checkout")
 	execCmd.PersistentFlags().BoolVarP(&execArg.debug, "debug", "d", false, "enable debug log")
 	execCmd.PersistentFlags().BoolVarP(&execArg.dryrun, "dryrun", "n", false, "dryrun mode")
