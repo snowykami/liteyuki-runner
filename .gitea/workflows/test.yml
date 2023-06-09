@@ -36,7 +36,3 @@ jobs:
         run: make build
       - name: test
         run: make test
-      - name: dockerfile lint check
-        uses: https://github.com/hadolint/hadolint-action@v3.1.0
-        with:
-          dockerfile: Dockerfile

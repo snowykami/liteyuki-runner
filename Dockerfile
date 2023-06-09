@@ -1,16 +1,14 @@
-FROM golang:1.20-alpine3.17 as builder
+FROM golang:1.20-alpine3.18 as builder
 # Do not remove `git` here, it is required for getting runner version when executing `make build`
-RUN apk add --no-cache make=4.3-r1 git=2.38.5-r0
+RUN apk add --no-cache make git
 
 COPY . /opt/src/act_runner
 WORKDIR /opt/src/act_runner
 
 RUN make clean && make build
 
-FROM alpine:3.17
-RUN apk add --no-cache \
-  git=2.38.5-r0 bash=5.2.15-r0 tini=0.19.0-r1 \
-  && rm -rf /var/cache/apk/*
+FROM alpine:3.18
+RUN apk add --no-cache git bash tini
 
 COPY --from=builder /opt/src/act_runner/act_runner /usr/local/bin/act_runner
 COPY run.sh /opt/act/run.sh
