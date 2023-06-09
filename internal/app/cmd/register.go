@@ -197,7 +197,7 @@ func registerInteractive(configFile string) error {
 		if stage == StageWaitingForRegistration {
 			log.Infof("Registering runner, name=%s, instance=%s, labels=%v.", inputs.RunnerName, inputs.InstanceAddr, inputs.CustomLabels)
 			if err := doRegister(cfg, inputs); err != nil {
-				log.Errorf("Failed to register runner: %v", err)
+				return fmt.Errorf("Failed to register runner: %w", err)
 			} else {
 				log.Infof("Runner registered successfully.")
 			}
@@ -257,8 +257,7 @@ func registerNoInteractive(configFile string, regArgs *registerArgs) error {
 		return nil
 	}
 	if err := doRegister(cfg, inputs); err != nil {
-		log.Errorf("Failed to register runner: %v", err)
-		return nil
+		return fmt.Errorf("Failed to register runner: %w", err)
 	}
 	log.Infof("Runner registered successfully.")
 	return nil
