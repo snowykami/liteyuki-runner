@@ -11,6 +11,6 @@ FROM alpine:3.18
 RUN apk add --no-cache git bash tini
 
 COPY --from=builder /opt/src/act_runner/act_runner /usr/local/bin/act_runner
-COPY run.sh /opt/act/run.sh
+COPY scripts/run.sh /opt/act/run.sh
 
 ENTRYPOINT ["/sbin/tini","--","/opt/act/run.sh"]

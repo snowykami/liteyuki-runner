@@ -6,3 +6,6 @@ Files in this directory:
 
 - [`dind-docker.yaml`](dind-docker.yaml)
   How to create a Deployment and Persistent Volume for Kubernetes to act as a runner. The Docker credentials are re-generated each time the pod connects and does not need to be persisted.
+
+- [`rootless-docker.yaml`](rootless-docker.yaml)
+  How to create a rootless Deployment and Persistent Volume for Kubernetes to act as a runner. The Docker credentials are re-generated each time the pod connects and does not need to be persisted.

@@ -19,6 +19,7 @@ GOFILES := $(shell find . -type f -name "*.go" -o -name "go.mod" ! -name "genera
 DOCKER_IMAGE ?= gitea/act_runner
 DOCKER_TAG ?= nightly
 DOCKER_REF := $(DOCKER_IMAGE):$(DOCKER_TAG)
+DOCKER_ROOTLESS_REF := $(DOCKER_IMAGE)_rootless:$(DOCKER_TAG)
 
 ifneq ($(shell uname), Darwin)
 	EXTLDFLAGS = -extldflags "-static" $(null)
@@ -169,6 +170,7 @@ docker:
 		ARG_DISABLE_CONTENT_TRUST=--disable-content-trust=false; \
 	fi; \
 	docker build $${ARG_DISABLE_CONTENT_TRUST} -t $(DOCKER_REF) .
+	docker build $${ARG_DISABLE_CONTENT_TRUST} -t $(DOCKER_ROOTLESS_REF) -f Dockerfile.rootless .
 
 clean:
 	$(GO) clean -x -i ./...
