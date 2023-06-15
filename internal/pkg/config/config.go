@@ -62,14 +62,12 @@ type Config struct {
 func LoadDefault(file string) (*Config, error) {
 	cfg := &Config{}
 	if file != "" {
-		f, err := os.Open(file)
+		content, err := os.ReadFile(file)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("open config file %q: %w", file, err)
 		}
-		defer f.Close()
-		decoder := yaml.NewDecoder(f)
-		if err := decoder.Decode(&cfg); err != nil {
-			return nil, err
+		if err := yaml.Unmarshal(content, cfg); err != nil {
+			return nil, fmt.Errorf("parse config file %q: %w", file, err)
 		}
 	}
 	compatibleWithOldEnvs(file != "", cfg)
