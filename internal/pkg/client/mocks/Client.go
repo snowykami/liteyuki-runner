@@ -33,6 +33,32 @@ func (_m *Client) Address() string {
 	return r0
 }
 
+// Declare provides a mock function with given fields: _a0, _a1
+func (_m *Client) Declare(_a0 context.Context, _a1 *connect.Request[runnerv1.DeclareRequest]) (*connect.Response[runnerv1.DeclareResponse], error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *connect.Response[runnerv1.DeclareResponse]
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *connect.Request[runnerv1.DeclareRequest]) (*connect.Response[runnerv1.DeclareResponse], error)); ok {
+		return rf(_a0, _a1)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *connect.Request[runnerv1.DeclareRequest]) *connect.Response[runnerv1.DeclareResponse]); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*connect.Response[runnerv1.DeclareResponse])
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *connect.Request[runnerv1.DeclareRequest]) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // FetchTask provides a mock function with given fields: _a0, _a1
 func (_m *Client) FetchTask(_a0 context.Context, _a1 *connect.Request[runnerv1.FetchTaskRequest]) (*connect.Response[runnerv1.FetchTaskResponse], error) {
 	ret := _m.Called(_a0, _a1)

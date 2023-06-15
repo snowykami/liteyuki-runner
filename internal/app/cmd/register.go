@@ -85,7 +85,7 @@ const (
 	StageInputInstance
 	StageInputToken
 	StageInputRunnerName
-	StageInputCustomLabels
+	StageInputLabels
 	StageWaitingForRegistration
 	StageExit
 )
@@ -101,7 +101,7 @@ type registerInputs struct {
 	InstanceAddr string
 	Token        string
 	RunnerName   string
-	CustomLabels []string
+	Labels       []string
 }
 
 func (r *registerInputs) validate() error {
@@ -111,8 +111,8 @@ func (r *registerInputs) validate() error {
 	if r.Token == "" {
 		return fmt.Errorf("token is empty")
 	}
-	if len(r.CustomLabels) > 0 {
-		return validateLabels(r.CustomLabels)
+	if len(r.Labels) > 0 {
+		return validateLabels(r.Labels)
 	}
 	return nil
 }
@@ -126,7 +126,7 @@ func validateLabels(ls []string) error {
 	return nil
 }
 
-func (r *registerInputs) assignToNext(stage registerStage, value string) registerStage {
+func (r *registerInputs) assignToNext(stage registerStage, value string, cfg *config.Config) registerStage {
 	// must set instance address and token.
 	// if empty, keep current stage.
 	if stage == StageInputInstance || stage == StageInputToken {
@@ -154,16 +154,33 @@ func (r *registerInputs) assignToNext(stage registerStage, value string) registe
 		return StageInputRunnerName
 	case StageInputRunnerName:
 		r.RunnerName = value
-		return StageInputCustomLabels
-	case StageInputCustomLabels:
-		r.CustomLabels = defaultLabels
+		// if there are some labels configured in config file, skip input labels stage
+		if len(cfg.Runner.Labels) > 0 {
+			ls := make([]string, 0, len(cfg.Runner.Labels))
+			for _, l := range cfg.Runner.Labels {
+				_, err := labels.Parse(l)
+				if err != nil {
+					log.WithError(err).Warnf("ignored invalid label %q", l)
+					continue
+				}
+				ls = append(ls, l)
+			}
+			if len(ls) == 0 {
+				log.Warn("no valid labels configured in config file, runner may not be able to pick up jobs")
+			}
+			r.Labels = ls
+			return StageWaitingForRegistration
+		}
+		return StageInputLabels
+	case StageInputLabels:
+		r.Labels = defaultLabels
 		if value != "" {
-			r.CustomLabels = strings.Split(value, ",")
+			r.Labels = strings.Split(value, ",")
 		}
 
-		if validateLabels(r.CustomLabels) != nil {
+		if validateLabels(r.Labels) != nil {
 			log.Infoln("Invalid labels, please input again, leave blank to use the default labels (for example, ubuntu-20.04:docker://node:16-bullseye,ubuntu-18.04:docker://node:16-buster,linux_arm:host)")
-			return StageInputCustomLabels
+			return StageInputLabels
 		}
 		return StageWaitingForRegistration
 	}
@@ -192,10 +209,10 @@ func registerInteractive(configFile string) error {
 		if err != nil {
 			return err
 		}
-		stage = inputs.assignToNext(stage, strings.TrimSpace(cmdString))
+		stage = inputs.assignToNext(stage, strings.TrimSpace(cmdString), cfg)
 
 		if stage == StageWaitingForRegistration {
-			log.Infof("Registering runner, name=%s, instance=%s, labels=%v.", inputs.RunnerName, inputs.InstanceAddr, inputs.CustomLabels)
+			log.Infof("Registering runner, name=%s, instance=%s, labels=%v.", inputs.RunnerName, inputs.InstanceAddr, inputs.Labels)
 			if err := doRegister(cfg, inputs); err != nil {
 				return fmt.Errorf("Failed to register runner: %w", err)
 			} else {
@@ -226,7 +243,7 @@ func printStageHelp(stage registerStage) {
 	case StageInputRunnerName:
 		hostname, _ := os.Hostname()
 		log.Infof("Enter the runner name (if set empty, use hostname: %s):\n", hostname)
-	case StageInputCustomLabels:
+	case StageInputLabels:
 		log.Infoln("Enter the runner labels, leave blank to use the default labels (comma-separated, for example, ubuntu-20.04:docker://node:16-bullseye,ubuntu-18.04:docker://node:16-buster,linux_arm:host):")
 	case StageWaitingForRegistration:
 		log.Infoln("Waiting for registration...")
@@ -242,12 +259,21 @@ func registerNoInteractive(configFile string, regArgs *registerArgs) error {
 		InstanceAddr: regArgs.InstanceAddr,
 		Token:        regArgs.Token,
 		RunnerName:   regArgs.RunnerName,
-		CustomLabels: defaultLabels,
+		Labels:       defaultLabels,
 	}
 	regArgs.Labels = strings.TrimSpace(regArgs.Labels)
+	// command line flag.
 	if regArgs.Labels != "" {
-		inputs.CustomLabels = strings.Split(regArgs.Labels, ",")
+		inputs.Labels = strings.Split(regArgs.Labels, ",")
 	}
+	// specify labels in config file.
+	if len(cfg.Runner.Labels) > 0 {
+		if regArgs.Labels != "" {
+			log.Warn("Labels from command will be ignored, use labels defined in config file.")
+		}
+		inputs.Labels = cfg.Runner.Labels
+	}
+
 	if inputs.RunnerName == "" {
 		inputs.RunnerName, _ = os.Hostname()
 		log.Infof("Runner name is empty, use hostname '%s'.", inputs.RunnerName)
@@ -302,7 +328,7 @@ func doRegister(cfg *config.Config, inputs *registerInputs) error {
 		Name:    inputs.RunnerName,
 		Token:   inputs.Token,
 		Address: inputs.InstanceAddr,
-		Labels:  inputs.CustomLabels,
+		Labels:  inputs.Labels,
 	}
 
 	ls := make([]string, len(reg.Labels))
@@ -314,7 +340,9 @@ func doRegister(cfg *config.Config, inputs *registerInputs) error {
 	resp, err := cli.Register(ctx, connect.NewRequest(&runnerv1.RegisterRequest{
 		Name:        reg.Name,
 		Token:       reg.Token,
-		AgentLabels: ls,
+		Version:     ver.Version(),
+		AgentLabels: ls, // Could be removed after Gitea 1.20
+		Labels:      ls,
 	}))
 	if err != nil {
 		log.WithError(err).Error("poller: cannot register new runner")

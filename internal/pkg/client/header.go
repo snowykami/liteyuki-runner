@@ -4,7 +4,8 @@
 package client
 
 const (
-	UUIDHeader    = "x-runner-uuid"
-	TokenHeader   = "x-runner-token"
+	UUIDHeader  = "x-runner-uuid"
+	TokenHeader = "x-runner-token"
+	// Deprecated: could be removed after Gitea 1.20 released
 	VersionHeader = "x-runner-version"
 )

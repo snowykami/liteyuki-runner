@@ -13,6 +13,7 @@ import (
 	"time"
 
 	runnerv1 "code.gitea.io/actions-proto-go/runner/v1"
+	"github.com/bufbuild/connect-go"
 	"github.com/docker/docker/api/types/container"
 	"github.com/nektos/act/pkg/artifactcache"
 	"github.com/nektos/act/pkg/common"
@@ -223,4 +224,11 @@ func parseDefaultActionsURLs(s string) []string {
 		trimmed = append(trimmed, t)
 	}
 	return trimmed
+}
+
+func (r *Runner) Declare(ctx context.Context, labels []string) (*connect.Response[runnerv1.DeclareResponse], error) {
+	return r.client.Declare(ctx, connect.NewRequest(&runnerv1.DeclareRequest{
+		Version: ver.Version(),
+		Labels:  labels,
+	}))
 }

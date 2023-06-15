@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/bufbuild/connect-go"
 	"github.com/mattn/go-isatty"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -43,8 +44,13 @@ func runDaemon(ctx context.Context, configFile *string) func(cmd *cobra.Command,
 			return fmt.Errorf("failed to load registration file: %w", err)
 		}
 
+		lbls := reg.Labels
+		if len(cfg.Runner.Labels) > 0 {
+			lbls = cfg.Runner.Labels
+		}
+
 		ls := labels.Labels{}
-		for _, l := range reg.Labels {
+		for _, l := range lbls {
 			label, err := labels.Parse(l)
 			if err != nil {
 				log.WithError(err).Warnf("ignored invalid label %q", l)
@@ -71,6 +77,24 @@ func runDaemon(ctx context.Context, configFile *string) func(cmd *cobra.Command,
 		)
 
 		runner := run.NewRunner(cfg, reg, cli)
+		// declare the labels of the runner before fetching tasks
+		resp, err := runner.Declare(ctx, ls.Names())
+		if err != nil && connect.CodeOf(err) == connect.CodeUnimplemented {
+			// Gitea instance is older version. skip declare step.
+			log.Warn("Because the Gitea instance is an old version, skip declare labels and version.")
+		} else if err != nil {
+			log.WithError(err).Error("fail to invoke Declare")
+			return err
+		} else {
+			log.Infof("runner: %s, with version: %s, with labels: %v, declare successfully",
+				resp.Msg.Runner.Name, resp.Msg.Runner.Version, resp.Msg.Runner.Labels)
+			// if declare successfully, override the labels in the.runner file with valid labels in the config file (if specified)
+			reg.Labels = ls.ToStrings()
+			if err := config.SaveRegistration(cfg.Runner.File, reg); err != nil {
+				return fmt.Errorf("failed to save runner config: %w", err)
+			}
+		}
+
 		poller := poll.New(cfg, cli, runner)
 
 		poller.Poll(ctx)

@@ -70,7 +70,7 @@ GO_PACKAGES_TO_VET ?= $(filter-out gitea.com/gitea/act_runner/internal/pkg/clien
 
 
 TAGS ?=
-LDFLAGS ?= -X "gitea.com/gitea/act_runner/internal/pkg/ver.version=$(RELASE_VERSION)"
+LDFLAGS ?= -X "gitea.com/gitea/act_runner/internal/pkg/ver.version=v$(RELASE_VERSION)"
 
 all: build
 

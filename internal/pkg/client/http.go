@@ -39,6 +39,7 @@ func New(endpoint string, insecure bool, uuid, token, version string, opts ...co
 			if token != "" {
 				req.Header().Set(TokenHeader, token)
 			}
+			// TODO: version will be removed from request header after Gitea 1.20 released.
 			if version != "" {
 				req.Header().Set(VersionHeader, version)
 			}

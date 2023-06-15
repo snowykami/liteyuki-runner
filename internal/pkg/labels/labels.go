@@ -82,3 +82,26 @@ func (l Labels) PickPlatform(runsOn []string) string {
 	// TODO: it may be not correct, what if the runner is used as host mode only?
 	return "node:16-bullseye"
 }
+
+func (l Labels) Names() []string {
+	names := make([]string, 0, len(l))
+	for _, label := range l {
+		names = append(names, label.Name)
+	}
+	return names
+}
+
+func (l Labels) ToStrings() []string {
+	ls := make([]string, 0, len(l))
+	for _, label := range l {
+		lbl := label.Name
+		if label.Schema != "" {
+			lbl += ":" + label.Schema
+			if label.Arg != "" {
+				lbl += ":" + label.Arg
+			}
+		}
+		ls = append(ls, lbl)
+	}
+	return ls
+}

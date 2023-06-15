@@ -29,6 +29,7 @@ type Runner struct {
 	Insecure      bool              `yaml:"insecure"`       // Insecure indicates whether the runner operates in an insecure mode.
 	FetchTimeout  time.Duration     `yaml:"fetch_timeout"`  // FetchTimeout specifies the timeout duration for fetching resources.
 	FetchInterval time.Duration     `yaml:"fetch_interval"` // FetchInterval specifies the interval duration for fetching resources.
+	Labels        []string          `yaml:"labels"`         // Labels specifies the labels of the runner. Labels are declared on each startup
 }
 
 // Cache represents the configuration for caching.
