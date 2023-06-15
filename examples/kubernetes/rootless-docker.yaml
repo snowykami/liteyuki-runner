@@ -43,7 +43,7 @@ spec:
           claimName: act-runner-vol
       containers:
       - name: runner
-        image: gitea/act_runner:nightly-rootless
+        image: gitea/act_runner:nightly-dind-rootless
         imagePullPolicy: Always
         # command: ["sh", "-c", "while ! nc -z localhost 2376 </dev/null; do echo 'waiting for docker daemon...'; sleep 5; done; /sbin/tini -- /opt/act/run.sh"]
         env:
