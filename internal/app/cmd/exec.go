@@ -410,6 +410,7 @@ func runExec(ctx context.Context, execArgs *executeArgs) func(cmd *cobra.Command
 			PlatformPicker: func(_ []string) string {
 				return execArgs.image
 			},
+			ValidVolumes: []string{"**"}, // All volumes are allowed for `exec` command
 		}
 
 		if !execArgs.debug {
