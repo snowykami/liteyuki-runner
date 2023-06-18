@@ -50,12 +50,18 @@ type Container struct {
 	ValidVolumes  []string `yaml:"valid_volumes"`  // ValidVolumes specifies the volumes (including bind mounts) can be mounted to containers.
 }
 
+// Docker represents the configuration for Docker.
+type Docker struct {
+	Host string `yaml:"host"` // Host specifies the Docker host.
+}
+
 // Config represents the overall configuration.
 type Config struct {
 	Log       Log       `yaml:"log"`       // Log represents the configuration for logging.
 	Runner    Runner    `yaml:"runner"`    // Runner represents the configuration for the runner.
 	Cache     Cache     `yaml:"cache"`     // Cache represents the configuration for caching.
 	Container Container `yaml:"container"` // Container represents the configuration for the container.
+	Docker    Docker    `yaml:"docker"`    // Docker represents the configuration for Docker.
 }
 
 // LoadDefault returns the default configuration.

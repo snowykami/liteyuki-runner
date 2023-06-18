@@ -63,7 +63,7 @@ func runDaemon(ctx context.Context, configFile *string) func(cmd *cobra.Command,
 		}
 
 		if ls.RequireDocker() {
-			if err := envcheck.CheckIfDockerRunning(ctx); err != nil {
+			if err := envcheck.CheckIfDockerRunning(ctx, cfg); err != nil {
 				return err
 			}
 		}

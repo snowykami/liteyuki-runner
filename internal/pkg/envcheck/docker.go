@@ -7,12 +7,21 @@ import (
 	"context"
 	"fmt"
 
+	"gitea.com/gitea/act_runner/internal/pkg/config"
+
 	"github.com/docker/docker/client"
 )
 
-func CheckIfDockerRunning(ctx context.Context) error {
-	// TODO: if runner support configures to use docker, we need config.Config to pass in
-	cli, err := client.NewClientWithOpts(client.FromEnv)
+func CheckIfDockerRunning(ctx context.Context, cfg *config.Config) error {
+	opts := []client.Opt{
+		client.FromEnv,
+	}
+
+	if cfg.Docker.Host != "" {
+		opts = append(opts, client.WithHost(cfg.Docker.Host))
+	}
+
+	cli, err := client.NewClientWithOpts(opts...)
 	if err != nil {
 		return err
 	}
