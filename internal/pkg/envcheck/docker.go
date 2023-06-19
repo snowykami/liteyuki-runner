@@ -7,9 +7,9 @@ import (
 	"context"
 	"fmt"
 
-	"gitea.com/gitea/act_runner/internal/pkg/config"
-
 	"github.com/docker/docker/client"
+
+	"gitea.com/gitea/act_runner/internal/pkg/config"
 )
 
 func CheckIfDockerRunning(ctx context.Context, cfg *config.Config) error {
@@ -17,8 +17,8 @@ func CheckIfDockerRunning(ctx context.Context, cfg *config.Config) error {
 		client.FromEnv,
 	}
 
-	if cfg.Docker.Host != "" {
-		opts = append(opts, client.WithHost(cfg.Docker.Host))
+	if cfg.Container.DockerHost != "" {
+		opts = append(opts, client.WithHost(cfg.Container.DockerHost))
 	}
 
 	cli, err := client.NewClientWithOpts(opts...)

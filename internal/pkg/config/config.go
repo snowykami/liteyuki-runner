@@ -48,11 +48,7 @@ type Container struct {
 	Options       string   `yaml:"options"`        // Options specifies additional options for the container.
 	WorkdirParent string   `yaml:"workdir_parent"` // WorkdirParent specifies the parent directory for the container's working directory.
 	ValidVolumes  []string `yaml:"valid_volumes"`  // ValidVolumes specifies the volumes (including bind mounts) can be mounted to containers.
-}
-
-// Docker represents the configuration for Docker.
-type Docker struct {
-	Host string `yaml:"host"` // Host specifies the Docker host.
+	DockerHost    string   `yaml:"docker_host"`    // DockerHost specifies the Docker host. It overrides the value specified in environment variable DOCKER_HOST.
 }
 
 // Config represents the overall configuration.
@@ -61,7 +57,6 @@ type Config struct {
 	Runner    Runner    `yaml:"runner"`    // Runner represents the configuration for the runner.
 	Cache     Cache     `yaml:"cache"`     // Cache represents the configuration for caching.
 	Container Container `yaml:"container"` // Container represents the configuration for the container.
-	Docker    Docker    `yaml:"docker"`    // Docker represents the configuration for Docker.
 }
 
 // LoadDefault returns the default configuration.

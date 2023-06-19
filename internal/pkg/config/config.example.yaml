@@ -68,9 +68,7 @@ container:
   # valid_volumes:
   #   - '**'
   valid_volumes: []
-
-docker:
   # overrides the docker client host with the specified one.
   # default value is the value of DOCKER_HOST environment variable.
   # if DOCKER_HOST is not set, the default value is unix:///var/run/docker.sock
-  host: ""
+  docker_host: ""
