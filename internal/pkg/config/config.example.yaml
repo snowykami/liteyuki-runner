@@ -72,3 +72,8 @@ container:
   # default value is the value of DOCKER_HOST environment variable.
   # if DOCKER_HOST is not set, the default value is unix:///var/run/docker.sock
   docker_host: ""
+
+host:
+  # The parent directory of a job's working directory.
+  # If it's empty, $HOME/.cache/act/ will be used.
+  workdir_parent:

@@ -51,12 +51,18 @@ type Container struct {
 	DockerHost    string   `yaml:"docker_host"`    // DockerHost specifies the Docker host. It overrides the value specified in environment variable DOCKER_HOST.
 }
 
+// Host represents the configuration for the host.
+type Host struct {
+	WorkdirParent string `yaml:"workdir_parent"` // WorkdirParent specifies the parent directory for the host's working directory.
+}
+
 // Config represents the overall configuration.
 type Config struct {
 	Log       Log       `yaml:"log"`       // Log represents the configuration for logging.
 	Runner    Runner    `yaml:"runner"`    // Runner represents the configuration for the runner.
 	Cache     Cache     `yaml:"cache"`     // Cache represents the configuration for caching.
 	Container Container `yaml:"container"` // Container represents the configuration for the container.
+	Host      Host      `yaml:"host"`      // Host represents the configuration for the host.
 }
 
 // LoadDefault returns the default configuration.
@@ -110,6 +116,10 @@ func LoadDefault(file string) (*Config, error) {
 	}
 	if cfg.Container.WorkdirParent == "" {
 		cfg.Container.WorkdirParent = "workspace"
+	}
+	if cfg.Host.WorkdirParent == "" {
+		home, _ := os.UserHomeDir()
+		cfg.Container.WorkdirParent = filepath.Join(home, ".cache", "act")
 	}
 	if cfg.Runner.FetchTimeout <= 0 {
 		cfg.Runner.FetchTimeout = 5 * time.Second
