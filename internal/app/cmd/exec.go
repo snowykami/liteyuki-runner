@@ -58,6 +58,7 @@ type executeArgs struct {
 	image                 string
 	cacheHandler          *artifactcache.Handler
 	network               string
+	githubInstance        string
 }
 
 // WorkflowsPath returns path to workflow file(s)
@@ -392,15 +393,15 @@ func runExec(ctx context.Context, execArgs *executeArgs) func(cmd *cobra.Command
 			ContainerArchitecture: execArgs.containerArchitecture,
 			ContainerDaemonSocket: execArgs.containerDaemonSocket,
 			UseGitIgnore:          execArgs.useGitIgnore,
-			// GitHubInstance:        t.client.Address(),
-			ContainerCapAdd:    execArgs.containerCapAdd,
-			ContainerCapDrop:   execArgs.containerCapDrop,
-			ContainerOptions:   execArgs.containerOptions,
-			AutoRemove:         true,
-			ArtifactServerPath: execArgs.artifactServerPath,
-			ArtifactServerPort: execArgs.artifactServerPort,
-			ArtifactServerAddr: execArgs.artifactServerAddr,
-			NoSkipCheckout:     execArgs.noSkipCheckout,
+			GitHubInstance:        execArgs.githubInstance,
+			ContainerCapAdd:       execArgs.containerCapAdd,
+			ContainerCapDrop:      execArgs.containerCapDrop,
+			ContainerOptions:      execArgs.containerOptions,
+			AutoRemove:            true,
+			ArtifactServerPath:    execArgs.artifactServerPath,
+			ArtifactServerPort:    execArgs.artifactServerPort,
+			ArtifactServerAddr:    execArgs.artifactServerAddr,
+			NoSkipCheckout:        execArgs.noSkipCheckout,
 			// PresetGitHubContext:   preset,
 			// EventJSON:             string(eventJSON),
 			ContainerNamePrefix:  fmt.Sprintf("GITEA-ACTIONS-TASK-%s", eventName),
@@ -477,6 +478,7 @@ func loadExecCmd(ctx context.Context) *cobra.Command {
 	execCmd.PersistentFlags().BoolVarP(&execArg.dryrun, "dryrun", "n", false, "dryrun mode")
 	execCmd.PersistentFlags().StringVarP(&execArg.image, "image", "i", "node:16-bullseye", "docker image to use")
 	execCmd.PersistentFlags().StringVarP(&execArg.network, "network", "", "", "Specify the network to which the container will connect")
+	execCmd.PersistentFlags().StringVarP(&execArg.githubInstance, "gitea-instance", "", "", "Gitea instance to use.")
 
 	return execCmd
 }
