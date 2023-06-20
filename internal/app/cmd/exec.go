@@ -414,6 +414,8 @@ func runExec(ctx context.Context, execArgs *executeArgs) func(cmd *cobra.Command
 			ValidVolumes: []string{"**"}, // All volumes are allowed for `exec` command
 		}
 
+		config.Env["ACT_EXEC"] = "true"
+
 		if !execArgs.debug {
 			logLevel := log.Level(log.InfoLevel)
 			config.JobLoggerLevel = &logLevel
