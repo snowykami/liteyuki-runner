@@ -416,6 +416,12 @@ func runExec(ctx context.Context, execArgs *executeArgs) func(cmd *cobra.Command
 
 		config.Env["ACT_EXEC"] = "true"
 
+		if t := config.Secrets["GITEA_TOKEN"]; t != "" {
+			config.Token = t
+		} else if t := config.Secrets["GITHUB_TOKEN"]; t != "" {
+			config.Token = t
+		}
+
 		if !execArgs.debug {
 			logLevel := log.Level(log.InfoLevel)
 			config.JobLoggerLevel = &logLevel
