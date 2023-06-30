@@ -197,7 +197,7 @@ func (r *Runner) run(ctx context.Context, task *runnerv1.Task, reporter *report.
 		ContainerOptions:      r.cfg.Container.Options,
 		ContainerDaemonSocket: r.cfg.Container.DockerHost,
 		Privileged:            r.cfg.Container.Privileged,
-		DefaultActionsURLs:    parseDefaultActionsURLs(taskContext["gitea_default_actions_url"].GetStringValue()),
+		DefaultActionInstance: taskContext["gitea_default_actions_url"].GetStringValue(),
 		PlatformPicker:        r.labels.PickPlatform,
 		Vars:                  task.Vars,
 		ValidVolumes:          r.cfg.Container.ValidVolumes,
@@ -217,16 +217,6 @@ func (r *Runner) run(ctx context.Context, task *runnerv1.Task, reporter *report.
 	execErr := executor(ctx)
 	reporter.SetOutputs(job.Outputs)
 	return execErr
-}
-
-func parseDefaultActionsURLs(s string) []string {
-	urls := strings.Split(s, ",")
-	trimmed := make([]string, 0, len(urls))
-	for _, u := range urls {
-		t := strings.TrimRight(strings.TrimSpace(u), "/")
-		trimmed = append(trimmed, t)
-	}
-	return trimmed
 }
 
 func (r *Runner) Declare(ctx context.Context, labels []string) (*connect.Response[runnerv1.DeclareResponse], error) {
