@@ -69,8 +69,9 @@ container:
   #   - '**'
   valid_volumes: []
   # overrides the docker client host with the specified one.
-  # default value is the value of DOCKER_HOST environment variable.
-  # if DOCKER_HOST is not set, the default value is unix:///var/run/docker.sock
+  # If it's empty, act_runner will find an available docker host automatically.
+  # If it's "-", act_runner will find an available docker host automatically, but the docker host won't be mounted to the job containers and service containers.
+  # If it's not empty or "-", the specified docker host will be used. An error will be returned if it doesn't work.
   docker_host: ""
 
 host:

@@ -63,8 +63,27 @@ func runDaemon(ctx context.Context, configFile *string) func(cmd *cobra.Command,
 		}
 
 		if ls.RequireDocker() {
-			if err := envcheck.CheckIfDockerRunning(ctx, cfg); err != nil {
+			dockerSocketPath, err := getDockerSocketPath(cfg.Container.DockerHost)
+			if err != nil {
 				return err
+			}
+			if err := envcheck.CheckIfDockerRunning(ctx, dockerSocketPath); err != nil {
+				return err
+			}
+			// if dockerSocketPath passes the check, override DOCKER_HOST with dockerSocketPath
+			os.Setenv("DOCKER_HOST", dockerSocketPath)
+			// empty cfg.Container.DockerHost means act_runner need to find an available docker host automatically
+			// and assign the path to cfg.Container.DockerHost
+			if cfg.Container.DockerHost == "" {
+				cfg.Container.DockerHost = dockerSocketPath
+			}
+			// check the scheme, if the scheme is not npipe or unix
+			// set cfg.Container.DockerHost to "-" because it can't be mounted to the job conatiner
+			if protoIndex := strings.Index(cfg.Container.DockerHost, "://"); protoIndex != -1 {
+				scheme := cfg.Container.DockerHost[:protoIndex]
+				if !strings.EqualFold(scheme, "npipe") && !strings.EqualFold(scheme, "unix") {
+					cfg.Container.DockerHost = "-"
+				}
 			}
 		}
 
@@ -139,4 +158,18 @@ func initLogging(cfg *config.Config) {
 			log.SetLevel(level)
 		}
 	}
+}
+
+func getDockerSocketPath(configDockerHost string) (string, error) {
+	// a `-` means don't mount the docker socket to job containers
+	if configDockerHost != "" && configDockerHost != "-" {
+		return configDockerHost, nil
+	}
+
+	socket, found := os.LookupEnv("DOCKER_HOST")
+	if found {
+		return socket, nil
+	}
+
+	return "", fmt.Errorf("daemon Docker Engine socket not found and docker_host config was invalid")
 }
