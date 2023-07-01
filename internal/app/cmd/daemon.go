@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
@@ -160,6 +161,15 @@ func initLogging(cfg *config.Config) {
 	}
 }
 
+var commonSocketPaths = []string{
+	"/var/run/docker.sock",
+	"/var/run/podman/podman.sock",
+	"$HOME/.colima/docker.sock",
+	"$XDG_RUNTIME_DIR/docker.sock",
+	`\\.\pipe\docker_engine`,
+	"$HOME/.docker/run/docker.sock",
+}
+
 func getDockerSocketPath(configDockerHost string) (string, error) {
 	// a `-` means don't mount the docker socket to job containers
 	if configDockerHost != "" && configDockerHost != "-" {
@@ -169,6 +179,15 @@ func getDockerSocketPath(configDockerHost string) (string, error) {
 	socket, found := os.LookupEnv("DOCKER_HOST")
 	if found {
 		return socket, nil
+	}
+
+	for _, p := range commonSocketPaths {
+		if _, err := os.Lstat(os.ExpandEnv(p)); err == nil {
+			if strings.HasPrefix(p, `\\.\`) {
+				return "npipe://" + filepath.ToSlash(os.ExpandEnv(p)), nil
+			}
+			return "unix://" + filepath.ToSlash(os.ExpandEnv(p)), nil
+		}
 	}
 
 	return "", fmt.Errorf("daemon Docker Engine socket not found and docker_host config was invalid")
