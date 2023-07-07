@@ -53,17 +53,21 @@ func NewRunner(cfg *config.Config, reg *config.Registration, cli client.Client) 
 		envs[k] = v
 	}
 	if cfg.Cache.Enabled == nil || *cfg.Cache.Enabled {
-		cacheHandler, err := artifactcache.StartHandler(
-			cfg.Cache.Dir,
-			cfg.Cache.Host,
-			cfg.Cache.Port,
-			log.StandardLogger().WithField("module", "cache_request"),
-		)
-		if err != nil {
-			log.Errorf("cannot init cache server, it will be disabled: %v", err)
-			// go on
+		if cfg.Cache.ExternalServer != "" {
+			envs["ACTIONS_CACHE_URL"] = cfg.Cache.ExternalServer
 		} else {
-			envs["ACTIONS_CACHE_URL"] = cacheHandler.ExternalURL() + "/"
+			cacheHandler, err := artifactcache.StartHandler(
+				cfg.Cache.Dir,
+				cfg.Cache.Host,
+				cfg.Cache.Port,
+				log.StandardLogger().WithField("module", "cache_request"),
+			)
+			if err != nil {
+				log.Errorf("cannot init cache server, it will be disabled: %v", err)
+				// go on
+			} else {
+				envs["ACTIONS_CACHE_URL"] = cacheHandler.ExternalURL() + "/"
+			}
 		}
 	}
 

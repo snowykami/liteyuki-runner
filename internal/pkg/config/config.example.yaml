@@ -45,6 +45,10 @@ cache:
   # The port of the cache server.
   # 0 means to use a random available port.
   port: 0
+  # The external cache server URL. Valid only when enable is true.
+  # If it's specified, act_runner will use this URL as the ACTIONS_CACHE_URL rather than start a server by itself.
+  # The URL should generally end with "/".
+  external_server: ""
 
 container:
   # Specifies the network to which the container will connect.

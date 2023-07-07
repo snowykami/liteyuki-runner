@@ -63,6 +63,19 @@ func Execute(ctx context.Context) {
 		},
 	})
 
+	// ./act_runner cache-server
+	var cacheArgs cacheServerArgs
+	cacheCmd := &cobra.Command{
+		Use:   "cache-server",
+		Short: "Start a cache server for the cache action",
+		Args:  cobra.MaximumNArgs(0),
+		RunE:  runCacheServer(ctx, &configFile, &cacheArgs),
+	}
+	cacheCmd.Flags().StringVarP(&cacheArgs.Dir, "dir", "d", "", "Cache directory")
+	cacheCmd.Flags().StringVarP(&cacheArgs.Host, "host", "s", "", "Host of the cache server")
+	cacheCmd.Flags().Uint16VarP(&cacheArgs.Port, "port", "p", 0, "Port of the cache server")
+	rootCmd.AddCommand(cacheCmd)
+
 	// hide completion command
 	rootCmd.CompletionOptions.HiddenDefaultCmd = true
 
