@@ -120,7 +120,7 @@ func LoadDefault(file string) (*Config, error) {
 	}
 	if cfg.Host.WorkdirParent == "" {
 		home, _ := os.UserHomeDir()
-		cfg.Container.WorkdirParent = filepath.Join(home, ".cache", "act")
+		cfg.Host.WorkdirParent = filepath.Join(home, ".cache", "act")
 	}
 	if cfg.Runner.FetchTimeout <= 0 {
 		cfg.Runner.FetchTimeout = 5 * time.Second
