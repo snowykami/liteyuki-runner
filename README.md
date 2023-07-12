@@ -72,6 +72,12 @@ If the registry succeed, it will run immediately. Next time, you could run the r
 ./act_runner daemon
 ```
 
+### Run with docker
+
+```bash
+docker run -e GITEA_INSTANCE_URL=https://your_gitea.com -e GITEA_RUNNER_REGISTRATION_TOKEN=<your_token> -v /var/run/docker.sock:/var/run/docker.sock --name my_runner gitea/act_runner:nightly
+```
+
 ### Configuration
 
 You can also configure the runner with a configuration file.
