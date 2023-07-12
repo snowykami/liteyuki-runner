@@ -47,12 +47,12 @@ func runRegister(ctx context.Context, regArgs *registerArgs, configFile *string)
 		}
 
 		if regArgs.NoInteractive {
-			if err := registerNoInteractive(*configFile, regArgs); err != nil {
+			if err := registerNoInteractive(ctx, *configFile, regArgs); err != nil {
 				return err
 			}
 		} else {
 			go func() {
-				if err := registerInteractive(*configFile); err != nil {
+				if err := registerInteractive(ctx, *configFile); err != nil {
 					log.Fatal(err)
 					return
 				}
@@ -187,7 +187,7 @@ func (r *registerInputs) assignToNext(stage registerStage, value string, cfg *co
 	return StageUnknown
 }
 
-func registerInteractive(configFile string) error {
+func registerInteractive(ctx context.Context, configFile string) error {
 	var (
 		reader = bufio.NewReader(os.Stdin)
 		stage  = StageInputInstance
@@ -213,7 +213,7 @@ func registerInteractive(configFile string) error {
 
 		if stage == StageWaitingForRegistration {
 			log.Infof("Registering runner, name=%s, instance=%s, labels=%v.", inputs.RunnerName, inputs.InstanceAddr, inputs.Labels)
-			if err := doRegister(cfg, inputs); err != nil {
+			if err := doRegister(ctx, cfg, inputs); err != nil {
 				return fmt.Errorf("Failed to register runner: %w", err)
 			} else {
 				log.Infof("Runner registered successfully.")
@@ -250,7 +250,7 @@ func printStageHelp(stage registerStage) {
 	}
 }
 
-func registerNoInteractive(configFile string, regArgs *registerArgs) error {
+func registerNoInteractive(ctx context.Context, configFile string, regArgs *registerArgs) error {
 	cfg, err := config.LoadDefault(configFile)
 	if err != nil {
 		return err
@@ -282,16 +282,14 @@ func registerNoInteractive(configFile string, regArgs *registerArgs) error {
 		log.WithError(err).Errorf("Invalid input, please re-run act command.")
 		return nil
 	}
-	if err := doRegister(cfg, inputs); err != nil {
+	if err := doRegister(ctx, cfg, inputs); err != nil {
 		return fmt.Errorf("Failed to register runner: %w", err)
 	}
 	log.Infof("Runner registered successfully.")
 	return nil
 }
 
-func doRegister(cfg *config.Config, inputs *registerInputs) error {
-	ctx := context.Background()
-
+func doRegister(ctx context.Context, cfg *config.Config, inputs *registerInputs) error {
 	// initial http client
 	cli := client.New(
 		inputs.InstanceAddr,
