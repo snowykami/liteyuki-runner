@@ -215,9 +215,8 @@ func registerInteractive(ctx context.Context, configFile string) error {
 			log.Infof("Registering runner, name=%s, instance=%s, labels=%v.", inputs.RunnerName, inputs.InstanceAddr, inputs.Labels)
 			if err := doRegister(ctx, cfg, inputs); err != nil {
 				return fmt.Errorf("Failed to register runner: %w", err)
-			} else {
-				log.Infof("Runner registered successfully.")
 			}
+			log.Infof("Runner registered successfully.")
 			return nil
 		}
 
@@ -305,7 +304,7 @@ func doRegister(ctx context.Context, cfg *config.Config, inputs *registerInputs)
 		}))
 		select {
 		case <-ctx.Done():
-			return nil
+			return ctx.Err()
 		default:
 		}
 		if ctx.Err() != nil {
