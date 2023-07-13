@@ -55,9 +55,8 @@ func TestParse(t *testing.T) {
 			if tt.wantErr {
 				require.Error(t, err)
 				return
-			} else {
-				require.NoError(t, err)
 			}
+			require.NoError(t, err)
 			assert.DeepEqual(t, got, tt.want)
 		})
 	}

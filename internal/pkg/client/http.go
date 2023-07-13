@@ -14,7 +14,7 @@ import (
 	"github.com/bufbuild/connect-go"
 )
 
-func getHttpClient(endpoint string, insecure bool) *http.Client {
+func getHTTPClient(endpoint string, insecure bool) *http.Client {
 	if strings.HasPrefix(endpoint, "https://") && insecure {
 		return &http.Client{
 			Transport: &http.Transport{
@@ -49,12 +49,12 @@ func New(endpoint string, insecure bool, uuid, token, version string, opts ...co
 
 	return &HTTPClient{
 		PingServiceClient: pingv1connect.NewPingServiceClient(
-			getHttpClient(endpoint, insecure),
+			getHTTPClient(endpoint, insecure),
 			baseURL,
 			opts...,
 		),
 		RunnerServiceClient: runnerv1connect.NewRunnerServiceClient(
-			getHttpClient(endpoint, insecure),
+			getHTTPClient(endpoint, insecure),
 			baseURL,
 			opts...,
 		),

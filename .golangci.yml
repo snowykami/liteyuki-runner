@@ -1,14 +1,11 @@
 linters:
   enable:
     - gosimple
-    - deadcode
     - typecheck
     - govet
     - errcheck
     - staticcheck
     - unused
-    - structcheck
-    - varcheck
     - dupl
     #- gocyclo # The cyclomatic complexety of a lot of functions is too high, we should refactor those another time.
     - gofmt
@@ -112,7 +109,6 @@ issues:
         - gocritic
     - linters:
         - unused
-        - deadcode
       text: "swagger"
     - path: contrib/pr/checkout.go
       linters:
@@ -154,9 +150,6 @@ issues:
     - path: cmd/dump.go
       linters:
         - dupl
-    - path: services/webhook/webhook.go
-      linters:
-        - structcheck
     - text: "commentFormatting: put a space between `//` and comment text"
       linters:
         - gocritic

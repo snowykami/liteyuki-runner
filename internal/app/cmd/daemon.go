@@ -79,7 +79,7 @@ func runDaemon(ctx context.Context, configFile *string) func(cmd *cobra.Command,
 				cfg.Container.DockerHost = dockerSocketPath
 			}
 			// check the scheme, if the scheme is not npipe or unix
-			// set cfg.Container.DockerHost to "-" because it can't be mounted to the job conatiner
+			// set cfg.Container.DockerHost to "-" because it can't be mounted to the job container
 			if protoIndex := strings.Index(cfg.Container.DockerHost, "://"); protoIndex != -1 {
 				scheme := cfg.Container.DockerHost[:protoIndex]
 				if !strings.EqualFold(scheme, "npipe") && !strings.EqualFold(scheme, "unix") {

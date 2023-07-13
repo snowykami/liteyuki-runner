@@ -91,10 +91,9 @@ func NewRunner(cfg *config.Config, reg *config.Registration, cli client.Client) 
 func (r *Runner) Run(ctx context.Context, task *runnerv1.Task) error {
 	if _, ok := r.runningTasks.Load(task.Id); ok {
 		return fmt.Errorf("task %d is already running", task.Id)
-	} else {
-		r.runningTasks.Store(task.Id, struct{}{})
-		defer r.runningTasks.Delete(task.Id)
 	}
+	r.runningTasks.Store(task.Id, struct{}{})
+	defer r.runningTasks.Delete(task.Id)
 
 	ctx, cancel := context.WithTimeout(ctx, r.cfg.Runner.Timeout)
 	defer cancel()
