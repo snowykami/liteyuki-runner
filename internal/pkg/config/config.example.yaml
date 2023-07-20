@@ -1,5 +1,8 @@
 # Example configuration file, it's safe to copy this as the default config file without any modification.
 
+# You don't have to copy this file to your instance,
+# just run `./act_runner generate-config > config.yaml` to generate a config file.
+
 log:
   # The level of logging, can be trace, debug, info, warn, error, fatal
   level: info
