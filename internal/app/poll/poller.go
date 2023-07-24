@@ -6,6 +6,7 @@ package poll
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 
 	runnerv1 "code.gitea.io/actions-proto-go/runner/v1"
@@ -45,19 +46,30 @@ func (p *Poller) Poll(ctx context.Context) {
 func (p *Poller) poll(ctx context.Context, wg *sync.WaitGroup, limiter *rate.Limiter) {
 	defer wg.Done()
 	for {
-		if err := limiter.Wait(ctx); err != nil {
-			if ctx.Err() != nil {
-				log.WithError(err).Debug("limiter wait failed")
-			}
-			return
+		p.pollTaskWithRateLimit(ctx, limiter)
+	}
+}
+
+func (p *Poller) pollTaskWithRateLimit(ctx context.Context, limiter *rate.Limiter) {
+	defer func() {
+		if r := recover(); r != nil {
+			err := fmt.Errorf("panic: %v", r)
+			log.WithError(err).Error("panic in pollTaskWithRateLimit")
 		}
-		task, ok := p.fetchTask(ctx)
-		if !ok {
-			continue
+	}()
+
+	if err := limiter.Wait(ctx); err != nil {
+		if ctx.Err() != nil {
+			log.WithError(err).Debug("limiter wait failed")
 		}
-		if err := p.runner.Run(ctx, task); err != nil {
-			log.WithError(err).Error("failed to run task")
-		}
+		return
+	}
+	task, ok := p.fetchTask(ctx)
+	if !ok {
+		return
+	}
+	if err := p.runner.Run(ctx, task); err != nil {
+		log.WithError(err).Error("failed to run task")
 	}
 }
 
