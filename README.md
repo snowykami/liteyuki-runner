@@ -26,6 +26,13 @@ make docker
 
 ## Quickstart
 
+Actions are disabled by default, so you need to add the following to the configuration file of your Gitea instance to enable it: 
+  
+```ini
+[actions]
+ENABLED=true
+```
+
 ### Register
 
 ```bash
@@ -36,7 +43,7 @@ And you will be asked to input:
 
 1. Gitea instance URL, like `http://192.168.8.8:3000/`. You should use your gitea instance ROOT_URL as the instance argument
  and you should not use `localhost` or `127.0.0.1` as instance IP;
-2. Runner token, you can get it from `http://192.168.8.8:3000/admin/runners`;
+2. Runner token, you can get it from `http://192.168.8.8:3000/admin/actions/runners`;
 3. Runner name, you can just leave it blank;
 4. Runner labels, you can just leave it blank.
 
