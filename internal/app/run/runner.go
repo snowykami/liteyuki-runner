@@ -183,7 +183,7 @@ func (r *Runner) run(ctx context.Context, task *runnerv1.Task, reporter *report.
 		ActionCacheDir: filepath.FromSlash(r.cfg.Host.WorkdirParent),
 
 		ReuseContainers:       false,
-		ForcePull:             false,
+		ForcePull:             r.cfg.Container.ForcePull,
 		ForceRebuild:          false,
 		LogOutput:             true,
 		JSONLogger:            false,
