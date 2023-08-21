@@ -163,9 +163,10 @@ func initLogging(cfg *config.Config) {
 
 var commonSocketPaths = []string{
 	"/var/run/docker.sock",
-	"/var/run/podman/podman.sock",
+	"/run/podman/podman.sock",
 	"$HOME/.colima/docker.sock",
 	"$XDG_RUNTIME_DIR/docker.sock",
+	"$XDG_RUNTIME_DIR/podman/podman.sock",
 	`\\.\pipe\docker_engine`,
 	"$HOME/.docker/run/docker.sock",
 }
