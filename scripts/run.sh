@@ -15,6 +15,11 @@ if [[ ! -z "${GITEA_RUNNER_LABELS}" ]]; then
   EXTRA_ARGS="${EXTRA_ARGS} --labels ${GITEA_RUNNER_LABELS}"
 fi
 
+# In case no token is set, it's possible to read the token from a file, i.e. a Docker Secret
+if [[ -z "${GITEA_RUNNER_REGISTRATION_TOKEN}" ]] && [[ -f "${GITEA_RUNNER_REGISTRATION_TOKEN_FILE}" ]]; then
+  GITEA_RUNNER_REGISTRATION_TOKEN=$(cat "${GITEA_RUNNER_REGISTRATION_TOKEN_FILE}")
+fi
+
 # Use the same ENV variable names as https://github.com/vegardit/docker-gitea-act-runner
 
 if [[ ! -s .runner ]]; then
@@ -44,5 +49,6 @@ if [[ ! -s .runner ]]; then
 fi
 # Prevent reading the token from the act_runner process
 unset GITEA_RUNNER_REGISTRATION_TOKEN
+unset GITEA_RUNNER_REGISTRATION_TOKEN_FILE
 
 act_runner daemon ${CONFIG_ARG}
