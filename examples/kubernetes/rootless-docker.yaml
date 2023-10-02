@@ -41,6 +41,8 @@ spec:
       - name: runner-data
         persistentVolumeClaim:
           claimName: act-runner-vol
+      securityContext:
+        fsGroup: 1000
       containers:
       - name: runner
         image: gitea/act_runner:nightly-dind-rootless
