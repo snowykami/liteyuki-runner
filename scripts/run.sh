@@ -6,6 +6,8 @@ fi
 
 cd /data
 
+RUNNER_STATE_FILE=${RUNNER_STATE_FILE:-'.runner'}
+
 CONFIG_ARG=""
 if [[ ! -z "${CONFIG_FILE}" ]]; then
   CONFIG_ARG="--config ${CONFIG_FILE}"
@@ -21,8 +23,9 @@ if [[ -z "${GITEA_RUNNER_REGISTRATION_TOKEN}" ]] && [[ -f "${GITEA_RUNNER_REGIST
 fi
 
 # Use the same ENV variable names as https://github.com/vegardit/docker-gitea-act-runner
+test -f "$RUNNER_STATE_FILE" || echo "$RUNNER_STATE_FILE is missing or not a regular file"
 
-if [[ ! -s .runner ]]; then
+if [[ ! -s "$RUNNER_STATE_FILE" ]]; then
   try=$((try + 1))
   success=0
 
