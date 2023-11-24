@@ -88,6 +88,9 @@ func LoadDefault(file string) (*Config, error) {
 			if err != nil {
 				return nil, fmt.Errorf("read env file %q: %w", cfg.Runner.EnvFile, err)
 			}
+			if cfg.Runner.Envs == nil {
+				cfg.Runner.Envs = map[string]string{}
+			}
 			for k, v := range envs {
 				cfg.Runner.Envs[k] = v
 			}
