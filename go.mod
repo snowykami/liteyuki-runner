@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	code.gitea.io/actions-proto-go v0.3.1
-	code.gitea.io/gitea-vet v0.2.3-0.20230113022436-2b1561217fa5
+	code.gitea.io/gitea-vet v0.2.3
 	github.com/avast/retry-go/v4 v4.5.0
 	github.com/bufbuild/connect-go v1.10.0
 	github.com/docker/docker v24.0.6+incompatible
