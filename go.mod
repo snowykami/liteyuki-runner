@@ -9,7 +9,7 @@ require (
 	github.com/bufbuild/connect-go v1.10.0
 	github.com/docker/docker v24.0.7+incompatible
 	github.com/joho/godotenv v1.5.1
-	github.com/mattn/go-isatty v0.0.19
+	github.com/mattn/go-isatty v0.0.20
 	github.com/nektos/act v0.2.51
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.0
