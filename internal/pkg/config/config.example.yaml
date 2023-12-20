@@ -82,6 +82,8 @@ container:
   docker_host: ""
   # Pull docker image(s) even if already present
   force_pull: false
+  # Rebuild docker image(s) even if already present
+  force_rebuild: false
 
 host:
   # The parent directory of a job's working directory.

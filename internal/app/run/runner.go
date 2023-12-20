@@ -184,7 +184,7 @@ func (r *Runner) run(ctx context.Context, task *runnerv1.Task, reporter *report.
 
 		ReuseContainers:       false,
 		ForcePull:             r.cfg.Container.ForcePull,
-		ForceRebuild:          false,
+		ForceRebuild:          r.cfg.Container.ForceRebuild,
 		LogOutput:             true,
 		JSONLogger:            false,
 		Env:                   r.envs,
