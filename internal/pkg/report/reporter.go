@@ -418,7 +418,7 @@ func (r *Reporter) parseLogRow(entry *log.Entry) *runnerv1.LogRow {
 
 	return &runnerv1.LogRow{
 		Time:    timestamppb.New(entry.Time),
-		Content: content,
+		Content: strings.ToValidUTF8(content, "?"),
 	}
 }
 
