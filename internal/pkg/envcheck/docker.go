@@ -27,7 +27,7 @@ func CheckIfDockerRunning(ctx context.Context, configDockerHost string) error {
 
 	_, err = cli.Ping(ctx)
 	if err != nil {
-		return fmt.Errorf("cannot ping the docker daemon, does it running? %w", err)
+		return fmt.Errorf("cannot ping the docker daemon, is it running? %w", err)
 	}
 
 	return nil
