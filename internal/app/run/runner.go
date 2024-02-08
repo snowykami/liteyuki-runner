@@ -162,8 +162,12 @@ func (r *Runner) run(ctx context.Context, task *runnerv1.Task, reporter *report.
 		preset.Token = t
 	}
 
-	// use task token to action api token
-	r.envs["ACTIONS_RUNTIME_TOKEN"] = preset.Token
+	giteaRuntimeToken := taskContext["gitea_runtime_token"].GetStringValue()
+	if giteaRuntimeToken == "" {
+		// use task token to action api token for previous Gitea Server Versions
+		giteaRuntimeToken = preset.Token
+	}
+	r.envs["ACTIONS_RUNTIME_TOKEN"] = giteaRuntimeToken
 
 	eventJSON, err := json.Marshal(preset.Event)
 	if err != nil {

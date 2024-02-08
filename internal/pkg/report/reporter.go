@@ -47,6 +47,9 @@ func NewReporter(ctx context.Context, cancel context.CancelFunc, client client.C
 	if v := task.Context.Fields["token"].GetStringValue(); v != "" {
 		oldnew = append(oldnew, v, "***")
 	}
+	if v := task.Context.Fields["gitea_runtime_token"].GetStringValue(); v != "" {
+		oldnew = append(oldnew, v, "***")
+	}
 	for _, v := range task.Secrets {
 		oldnew = append(oldnew, v, "***")
 	}
