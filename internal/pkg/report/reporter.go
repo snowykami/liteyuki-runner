@@ -114,6 +114,9 @@ func (r *Reporter) Fire(entry *log.Entry) error {
 				for _, s := range r.state.Steps {
 					if s.Result == runnerv1.Result_RESULT_UNSPECIFIED {
 						s.Result = runnerv1.Result_RESULT_CANCELLED
+						if jobResult == runnerv1.Result_RESULT_SKIPPED {
+							s.Result = runnerv1.Result_RESULT_SKIPPED
+						}
 					}
 				}
 			}
