@@ -209,6 +209,7 @@ func (r *Runner) run(ctx context.Context, task *runnerv1.Task, reporter *report.
 		PlatformPicker:        r.labels.PickPlatform,
 		Vars:                  task.Vars,
 		ValidVolumes:          r.cfg.Container.ValidVolumes,
+		InsecureSkipTLS:       r.cfg.Runner.Insecure,
 	}
 
 	rr, err := runner.New(runnerConfig)
