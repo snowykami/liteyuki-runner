@@ -11,7 +11,7 @@ import (
 	"sync/atomic"
 
 	runnerv1 "code.gitea.io/actions-proto-go/runner/v1"
-	"github.com/bufbuild/connect-go"
+	"connectrpc.com/connect"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/time/rate"
 

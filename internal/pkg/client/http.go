@@ -11,7 +11,7 @@ import (
 
 	"code.gitea.io/actions-proto-go/ping/v1/pingv1connect"
 	"code.gitea.io/actions-proto-go/runner/v1/runnerv1connect"
-	"github.com/bufbuild/connect-go"
+	"connectrpc.com/connect"
 )
 
 func getHTTPClient(endpoint string, insecure bool) *http.Client {
