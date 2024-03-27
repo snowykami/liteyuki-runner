@@ -27,6 +27,8 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           S3_REGION: ${{ secrets.AWS_REGION }}
           S3_BUCKET: ${{ secrets.AWS_BUCKET }}
+          GORELEASER_FORCE_TOKEN: 'gitea'
+          GITEA_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   release-image:
     runs-on: ubuntu-latest
     container:
