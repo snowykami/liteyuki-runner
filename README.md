@@ -58,9 +58,9 @@ INFO Enter the runner token:
 fe884e8027dc292970d4e0303fe82b14xxxxxxxx
 INFO Enter the runner name (if set empty, use hostname: Test.local):
 
-INFO Enter the runner labels, leave blank to use the default labels (comma-separated, for example, ubuntu-20.04:docker://node:16-bullseye,ubuntu-18.04:docker://node:16-buster,linux_arm:host):
+INFO Enter the runner labels, leave blank to use the default labels (comma-separated, for example, docker://node:20-bookworm,ubuntu-22.04:docker://node:20-bookworm,ubuntu-20.04:docker://node:20-bullseye,ubuntu-18.04:docker://node:20-buster):
 
-INFO Registering runner, name=Test.local, instance=http://192.168.8.8:3000/, labels=[ubuntu-latest:docker://node:16-bullseye ubuntu-22.04:docker://node:16-bullseye ubuntu-20.04:docker://node:16-bullseye ubuntu-18.04:docker://node:16-buster].
+INFO Registering runner, name=Test.local, instance=http://192.168.8.8:3000/, labels=[ubuntu-latest:docker://node:20-bookworm ubuntu-22.04:docker://node:20-bookworm ubuntu-20.04:docker://node:20-bullseye ubuntu-18.04:docker://node:20-buster].
 DEBU Successfully pinged the Gitea instance server
 INFO Runner registered successfully.
 ```

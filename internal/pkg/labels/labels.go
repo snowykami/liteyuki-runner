@@ -55,7 +55,6 @@ func (l Labels) PickPlatform(runsOn []string) string {
 		switch label.Schema {
 		case SchemeDocker:
 			// "//" will be ignored
-			// TODO maybe we should use 'ubuntu-18.04:docker:node:16-buster' instead
 			platforms[label.Name] = strings.TrimPrefix(label.Arg, "//")
 		case SchemeHost:
 			platforms[label.Name] = "-self-hosted"
@@ -80,7 +79,7 @@ func (l Labels) PickPlatform(runsOn []string) string {
 	// So the runner receives a task with a label that the runner doesn't have,
 	// it happens when the user have edited the label of the runner in the web UI.
 	// TODO: it may be not correct, what if the runner is used as host mode only?
-	return "node:16-bullseye"
+	return "node:20-bookworm"
 }
 
 func (l Labels) Names() []string {
