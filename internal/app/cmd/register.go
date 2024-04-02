@@ -90,16 +90,10 @@ const (
 	StageExit
 )
 
-/*
-ubuntu-18.04 -> bionic -> buster: https://git.launchpad.net/ubuntu/+source/base-files/tree/etc/debian_version?h=ubuntu/bionic
-ubuntu-20.04 -> focal -> bullseye: https://git.launchpad.net/ubuntu/+source/base-files/tree/etc/debian_version?h=ubuntu/focal
-ubuntu-22.04 -> jammy -> bookworm: https://git.launchpad.net/ubuntu/+source/base-files/tree/etc/debian_version?h=ubuntu/jammy
-*/
 var defaultLabels = []string{
-	"ubuntu-latest:docker://node:20-bookworm",
-	"ubuntu-22.04:docker://node:20-bookworm",
-	"ubuntu-20.04:docker://node:20-bullseye",
-	"ubuntu-18.04:docker://node:20-buster",
+	"ubuntu-latest:docker://gitea/runner-images:ubuntu-latest",
+	"ubuntu-22.04:docker://gitea/runner-images:ubuntu-22.04",
+	"ubuntu-20.04:docker://gitea/runner-images:ubuntu-20.04",
 }
 
 type registerInputs struct {
@@ -184,7 +178,7 @@ func (r *registerInputs) assignToNext(stage registerStage, value string, cfg *co
 		}
 
 		if validateLabels(r.Labels) != nil {
-			log.Infoln("Invalid labels, please input again, leave blank to use the default labels (for example, docker://node:20-bookworm,ubuntu-22.04:docker://node:20-bookworm,ubuntu-20.04:docker://node:20-bullseye,ubuntu-18.04:docker://node:20-buster)")
+			log.Infoln("Invalid labels, please input again, leave blank to use the default labels (for example, ubuntu-latest:docker://gitea/runner-images:ubuntu-latest)")
 			return StageInputLabels
 		}
 		return StageWaitingForRegistration
@@ -248,7 +242,7 @@ func printStageHelp(stage registerStage) {
 		hostname, _ := os.Hostname()
 		log.Infof("Enter the runner name (if set empty, use hostname: %s):\n", hostname)
 	case StageInputLabels:
-		log.Infoln("Enter the runner labels, leave blank to use the default labels (comma-separated, for example, docker://node:20-bookworm,ubuntu-22.04:docker://node:20-bookworm,ubuntu-20.04:docker://node:20-bullseye,ubuntu-18.04:docker://node:20-buster):")
+		log.Infoln("Enter the runner labels, leave blank to use the default labels (comma-separated, for example, ubuntu-latest:docker://gitea/runner-images:ubuntu-latest):")
 	case StageWaitingForRegistration:
 		log.Infoln("Waiting for registration...")
 	}

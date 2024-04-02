@@ -79,7 +79,7 @@ func (l Labels) PickPlatform(runsOn []string) string {
 	// So the runner receives a task with a label that the runner doesn't have,
 	// it happens when the user have edited the label of the runner in the web UI.
 	// TODO: it may be not correct, what if the runner is used as host mode only?
-	return "node:20-bookworm"
+	return "gitea/runner-images:ubuntu-latest"
 }
 
 func (l Labels) Names() []string {
