@@ -10,6 +10,7 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -88,6 +89,14 @@ func runDaemon(ctx context.Context, configFile *string) func(cmd *cobra.Command,
 			}
 		}
 
+		if !slices.Equal(reg.Labels, ls.ToStrings()) {
+			reg.Labels = ls.ToStrings()
+			if err := config.SaveRegistration(cfg.Runner.File, reg); err != nil {
+				return fmt.Errorf("failed to save runner config: %w", err)
+			}
+			log.Infof("labels updated to: %v", reg.Labels)
+		}
+
 		cli := client.New(
 			reg.Address,
 			cfg.Runner.Insecure,
@@ -97,22 +106,18 @@ func runDaemon(ctx context.Context, configFile *string) func(cmd *cobra.Command,
 		)
 
 		runner := run.NewRunner(cfg, reg, cli)
+
 		// declare the labels of the runner before fetching tasks
 		resp, err := runner.Declare(ctx, ls.Names())
 		if err != nil && connect.CodeOf(err) == connect.CodeUnimplemented {
-			// Gitea instance is older version. skip declare step.
-			log.Warn("Because the Gitea instance is an old version, skip declare labels and version.")
+			log.Errorf("Your Gitea version is too old to support runner declare, please upgrade to v1.21 or later")
+			return err
 		} else if err != nil {
 			log.WithError(err).Error("fail to invoke Declare")
 			return err
 		} else {
 			log.Infof("runner: %s, with version: %s, with labels: %v, declare successfully",
 				resp.Msg.Runner.Name, resp.Msg.Runner.Version, resp.Msg.Runner.Labels)
-			// if declare successfully, override the labels in the.runner file with valid labels in the config file (if specified)
-			reg.Labels = ls.ToStrings()
-			if err := config.SaveRegistration(cfg.Runner.File, reg); err != nil {
-				return fmt.Errorf("failed to save runner config: %w", err)
-			}
 		}
 
 		poller := poll.New(cfg, cli, runner)
