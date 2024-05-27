@@ -54,4 +54,4 @@ fi
 unset GITEA_RUNNER_REGISTRATION_TOKEN
 unset GITEA_RUNNER_REGISTRATION_TOKEN_FILE
 
-act_runner daemon ${CONFIG_ARG}
+exec act_runner daemon ${CONFIG_ARG}
