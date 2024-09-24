@@ -23,10 +23,9 @@ jobs:
           passphrase: ${{ secrets.PASSPHRASE }}
           fingerprint: CC64B1DB67ABBEECAB24B6455FC346329753F4B0
       - name: goreleaser
-        uses: goreleaser/goreleaser-action@v5
+        uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser-pro
-          version: latest
           args: release
         env:
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
