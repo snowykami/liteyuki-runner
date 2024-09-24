@@ -1,3 +1,5 @@
+version: 2
+
 before:
   hooks:
     - go mod tidy
@@ -81,7 +83,7 @@ blobs:
     provider: s3
     bucket: "{{ .Env.S3_BUCKET }}"
     region: "{{ .Env.S3_REGION }}"
-    folder: "act_runner/{{.Version}}"
+    directory: "act_runner/{{.Version}}"
     extra_files:
       - glob: ./**.xz
       - glob: ./**.sha256
@@ -97,10 +99,10 @@ checksum:
       - glob: ./**.xz
 
 snapshot:
-  name_template: "{{ .Branch }}-devel"
+  version_template: "{{ .Branch }}-devel"
 
 nightly:
-  name_template: "nightly"
+  version_template: "nightly"
 
 gitea_urls:
   api: https://gitea.com/api/v1
