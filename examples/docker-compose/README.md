@@ -5,12 +5,22 @@
   gitea:
     image: gitea/gitea
     ...
+    healthcheck:
+      # checks availability of Gitea's front-end with curl
+      test: ["CMD", "curl", "-f", "<instance_url>"]
+      interval: 10s
+      retries: 3
+      start_period: 30s
+      timeout: 10s
 
   runner:
     image: gitea/act_runner
     restart: always
     depends_on:
-      - gitea
+      gitea:
+        # required so runner can attach to gitea, see "healthcheck"
+        condition: service_healthy 
+        restart: true
     volumes:
       - ./data/act_runner:/data
       - /var/run/docker.sock:/var/run/docker.sock
