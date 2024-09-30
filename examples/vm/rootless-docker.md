@@ -11,7 +11,8 @@ As `root`:
 ```bash
  useradd -m rootless
  passwd rootless
-```
+ apt-get install -y uidmap # Not mentioned but needed for docker rootless.
+ ```
 
 - Install [`docker-ce`](https://docs.docker.com/engine/install/)
 - (Recommended) Disable the system-wide Docker daemon
@@ -21,12 +22,19 @@ As `root`:
 As the `rootless` user:
 
 - Follow the instructions for [enabling rootless mode](https://docs.docker.com/engine/security/rootless/)
-- Add the following lines to the `/home/rootless/.bashrc`:
+- Add the following line to the `/home/rootless/.bashrc`:
 
 ```bash
- export XDG_RUNTIME_DIR=/home/rootless/.docker/run
- export PATH=/home/rootless/bin:$PATH
- export DOCKER_HOST=unix:///run/user/1001/docker.sock
+for f in ./.bashrc.d/*.bash; do echo "Processing $f file..."; . "$f"; done
+```
+
+- Create the .bashrc.d directory `mkdir ~/.bashrc.d`
+- Add the following lines to the `/home/rootless/.bashrc.d/rootless-docker.bash`:
+
+```bash
+export XDG_RUNTIME_DIR=/home/rootless/.docker/run
+export PATH=/home/rootless/bin:$PATH
+export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock
 ```
 
 - Reboot. Ensure that the Docker process is working.
