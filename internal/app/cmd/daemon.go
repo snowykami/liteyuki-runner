@@ -28,7 +28,7 @@ import (
 	"gitea.com/gitea/act_runner/internal/pkg/ver"
 )
 
-func runDaemon(ctx context.Context, configFile *string) func(cmd *cobra.Command, args []string) error {
+func runDaemon(ctx context.Context, daemArgs *daemonArgs, configFile *string) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		cfg, err := config.LoadDefault(*configFile)
 		if err != nil {
@@ -122,9 +122,24 @@ func runDaemon(ctx context.Context, configFile *string) func(cmd *cobra.Command,
 
 		poller := poll.New(cfg, cli, runner)
 
-		go poller.Poll()
+		if daemArgs.Once {
+			done := make(chan struct{})
+			go func() {
+				defer close(done)
+				poller.PollOnce()
+			}()
 
-		<-ctx.Done()
+			// shutdown when we complete a job or cancel is requested
+			select {
+			case <-ctx.Done():
+			case <-done:
+			}
+		} else {
+			go poller.Poll()
+
+			<-ctx.Done()
+		}
+
 		log.Infof("runner: %s shutdown initiated, waiting %s for running jobs to complete before shutting down", resp.Msg.Runner.Name, cfg.Runner.ShutdownTimeout)
 
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.Runner.ShutdownTimeout)
@@ -134,8 +149,13 @@ func runDaemon(ctx context.Context, configFile *string) func(cmd *cobra.Command,
 		if err != nil {
 			log.Warnf("runner: %s cancelled in progress jobs during shutdown", resp.Msg.Runner.Name)
 		}
+
 		return nil
 	}
+}
+
+type daemonArgs struct {
+	Once bool
 }
 
 // initLogging setup the global logrus logger.

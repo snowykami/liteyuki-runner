@@ -42,12 +42,14 @@ func Execute(ctx context.Context) {
 	rootCmd.AddCommand(registerCmd)
 
 	// ./act_runner daemon
+	var daemArgs daemonArgs
 	daemonCmd := &cobra.Command{
 		Use:   "daemon",
 		Short: "Run as a runner daemon",
-		Args:  cobra.MaximumNArgs(1),
-		RunE:  runDaemon(ctx, &configFile),
+		Args:  cobra.MaximumNArgs(0),
+		RunE:  runDaemon(ctx, &daemArgs, &configFile),
 	}
+	daemonCmd.Flags().BoolVar(&daemArgs.Once, "once", false, "Run one job then exit")
 	rootCmd.AddCommand(daemonCmd)
 
 	// ./act_runner exec

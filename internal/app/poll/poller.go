@@ -70,6 +70,15 @@ func (p *Poller) Poll() {
 	close(p.done)
 }
 
+func (p *Poller) PollOnce() {
+	limiter := rate.NewLimiter(rate.Every(p.cfg.Runner.FetchInterval), 1)
+
+	p.pollOnce(limiter)
+
+	// signal that we're done
+	close(p.done)
+}
+
 func (p *Poller) Shutdown(ctx context.Context) error {
 	p.shutdownPolling()
 
@@ -102,6 +111,19 @@ func (p *Poller) Shutdown(ctx context.Context) error {
 func (p *Poller) poll(wg *sync.WaitGroup, limiter *rate.Limiter) {
 	defer wg.Done()
 	for {
+		p.pollOnce(limiter)
+
+		select {
+		case <-p.pollingCtx.Done():
+			return
+		default:
+			continue
+		}
+	}
+}
+
+func (p *Poller) pollOnce(limiter *rate.Limiter) {
+	for {
 		if err := limiter.Wait(p.pollingCtx); err != nil {
 			if p.pollingCtx.Err() != nil {
 				log.WithError(err).Debug("limiter wait failed")
@@ -114,6 +136,7 @@ func (p *Poller) poll(wg *sync.WaitGroup, limiter *rate.Limiter) {
 		}
 
 		p.runTaskWithRecover(p.jobsCtx, task)
+		return
 	}
 }
 
