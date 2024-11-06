@@ -73,6 +73,7 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
+          target: basic
           platforms: |
             linux/amd64
             linux/arm64
@@ -81,13 +82,26 @@ jobs:
             ${{ env.DOCKER_ORG }}/${{ steps.meta.outputs.REPO_NAME }}:${{ steps.meta.outputs.REPO_VERSION }}
             ${{ env.DOCKER_ORG }}/${{ steps.meta.outputs.REPO_NAME }}:${{ env.DOCKER_LATEST }}
 
-      - name: Build and push dind-rootless
+      - name: Build and push dind
         uses: docker/build-push-action@v5
-        env:
-          ACTIONS_RUNTIME_TOKEN: "" # See https://gitea.com/gitea/act_runner/issues/119
         with:
           context: .
-          file: ./Dockerfile.rootless
+          file: ./Dockerfile
+          target: dind
+          platforms: |
+            linux/amd64
+            linux/arm64
+          push: true
+          tags: |
+            ${{ env.DOCKER_ORG }}/${{ steps.meta.outputs.REPO_NAME }}:${{ steps.meta.outputs.REPO_VERSION }}-dind
+            ${{ env.DOCKER_ORG }}/${{ steps.meta.outputs.REPO_NAME }}:${{ env.DOCKER_LATEST }}-dind
+
+      - name: Build and push dind-rootless
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          target: dind-rootless
           platforms: |
             linux/amd64
             linux/arm64
