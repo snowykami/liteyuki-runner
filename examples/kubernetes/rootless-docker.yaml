@@ -12,7 +12,10 @@ spec:
 ---
 apiVersion: v1
 data:
-  token: << runner registration token goes here >>
+  # The registration token can be obtained from the web UI, API or command-line.
+  # You can also set a pre-defined global runner registration token for the Gitea instance via 
+  # `GITEA_RUNNER_REGISTRATION_TOKEN`/`GITEA_RUNNER_REGISTRATION_TOKEN_FILE` environment variable.
+  token: << base64 encoded registration token >>
 kind: Secret
 metadata:
   name: runner-secret

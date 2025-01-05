@@ -12,6 +12,11 @@
       retries: 3
       start_period: 30s
       timeout: 10s
+    environment:
+      # GITEA_RUNNER_REGISTRATION_TOKEN can be used to set a global runner registration token.
+      # The Gitea version must be v1.23 or higher.
+      # It's also possible to use GITEA_RUNNER_REGISTRATION_TOKEN_FILE to pass the location.
+      # - GITEA_RUNNER_REGISTRATION_TOKEN=<user-defined registration token>
 
   runner:
     image: gitea/act_runner
