@@ -170,7 +170,6 @@ docker:
 		ARG_DISABLE_CONTENT_TRUST=--disable-content-trust=false; \
 	fi; \
 	docker build $${ARG_DISABLE_CONTENT_TRUST} -t $(DOCKER_REF) .
-	docker build $${ARG_DISABLE_CONTENT_TRUST} -t $(DOCKER_ROOTLESS_REF) -f Dockerfile.rootless .
 
 clean:
 	$(GO) clean -x -i ./...
