@@ -1,9 +1,9 @@
 module gitea.com/gitea/act_runner
 
-go 1.23
+go 1.24
 
 require (
-	code.gitea.io/actions-proto-go v0.4.0
+	code.gitea.io/actions-proto-go v0.4.1
 	code.gitea.io/gitea-vet v0.2.3
 	connectrpc.com/connect v1.16.2
 	github.com/avast/retry-go/v4 v4.6.0
@@ -98,4 +98,4 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
-replace github.com/nektos/act => gitea.com/gitea/act v0.261.3
+replace github.com/nektos/act => gitea.com/gitea/act v0.261.4
