@@ -91,9 +91,9 @@ const (
 )
 
 var defaultLabels = []string{
-	"ubuntu-latest:docker://gitea/runner-images:ubuntu-latest",
-	"ubuntu-22.04:docker://gitea/runner-images:ubuntu-22.04",
-	"ubuntu-20.04:docker://gitea/runner-images:ubuntu-20.04",
+	"ubuntu-latest:docker://docker.gitea.com/runner-images:ubuntu-latest",
+	"ubuntu-22.04:docker://docker.gitea.com/runner-images:ubuntu-22.04",
+	"ubuntu-20.04:docker://docker.gitea.com/runner-images:ubuntu-20.04",
 }
 
 type registerInputs struct {
@@ -178,7 +178,7 @@ func (r *registerInputs) assignToNext(stage registerStage, value string, cfg *co
 		}
 
 		if validateLabels(r.Labels) != nil {
-			log.Infoln("Invalid labels, please input again, leave blank to use the default labels (for example, ubuntu-latest:docker://gitea/runner-images:ubuntu-latest)")
+			log.Infoln("Invalid labels, please input again, leave blank to use the default labels (for example, ubuntu-latest:docker://docker.gitea.com/runner-images:ubuntu-latest)")
 			return StageInputLabels
 		}
 		return StageWaitingForRegistration
@@ -242,7 +242,7 @@ func printStageHelp(stage registerStage) {
 		hostname, _ := os.Hostname()
 		log.Infof("Enter the runner name (if set empty, use hostname: %s):\n", hostname)
 	case StageInputLabels:
-		log.Infoln("Enter the runner labels, leave blank to use the default labels (comma-separated, for example, ubuntu-latest:docker://gitea/runner-images:ubuntu-latest):")
+		log.Infoln("Enter the runner labels, leave blank to use the default labels (comma-separated, for example, ubuntu-latest:docker://docker.gitea.com/runner-images:ubuntu-latest):")
 	case StageWaitingForRegistration:
 		log.Infoln("Waiting for registration...")
 	}

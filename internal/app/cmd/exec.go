@@ -484,7 +484,7 @@ func loadExecCmd(ctx context.Context) *cobra.Command {
 	execCmd.PersistentFlags().BoolVarP(&execArg.noSkipCheckout, "no-skip-checkout", "", false, "Do not skip actions/checkout")
 	execCmd.PersistentFlags().BoolVarP(&execArg.debug, "debug", "d", false, "enable debug log")
 	execCmd.PersistentFlags().BoolVarP(&execArg.dryrun, "dryrun", "n", false, "dryrun mode")
-	execCmd.PersistentFlags().StringVarP(&execArg.image, "image", "i", "gitea/runner-images:ubuntu-latest", "Docker image to use. Use \"-self-hosted\" to run directly on the host.")
+	execCmd.PersistentFlags().StringVarP(&execArg.image, "image", "i", "docker.gitea.com/runner-images:ubuntu-latest", "Docker image to use. Use \"-self-hosted\" to run directly on the host.")
 	execCmd.PersistentFlags().StringVarP(&execArg.network, "network", "", "", "Specify the network to which the container will connect")
 	execCmd.PersistentFlags().StringVarP(&execArg.githubInstance, "gitea-instance", "", "", "Gitea instance to use.")
 

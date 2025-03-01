@@ -58,9 +58,9 @@ INFO Enter the runner token:
 fe884e8027dc292970d4e0303fe82b14xxxxxxxx
 INFO Enter the runner name (if set empty, use hostname: Test.local):
 
-INFO Enter the runner labels, leave blank to use the default labels (comma-separated, for example, ubuntu-latest:docker://gitea/runner-images:ubuntu-latest):
+INFO Enter the runner labels, leave blank to use the default labels (comma-separated, for example, ubuntu-latest:docker://docker.gitea.com/runner-images:ubuntu-latest):
 
-INFO Registering runner, name=Test.local, instance=http://192.168.8.8:3000/, labels=[ubuntu-latest:docker://gitea/runner-images:ubuntu-latest ubuntu-22.04:docker://gitea/runner-images:ubuntu-22.04 ubuntu-20.04:docker://gitea/runner-images:ubuntu-20.04].
+INFO Registering runner, name=Test.local, instance=http://192.168.8.8:3000/, labels=[ubuntu-latest:docker://docker.gitea.com/runner-images:ubuntu-latest ubuntu-22.04:docker://docker.gitea.com/runner-images:ubuntu-22.04 ubuntu-20.04:docker://docker.gitea.com/runner-images:ubuntu-20.04].
 DEBU Successfully pinged the Gitea instance server
 INFO Runner registered successfully.
 ```
