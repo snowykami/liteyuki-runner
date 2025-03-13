@@ -122,7 +122,7 @@ func runDaemon(ctx context.Context, daemArgs *daemonArgs, configFile *string) fu
 
 		poller := poll.New(cfg, cli, runner)
 
-		if daemArgs.Once {
+		if daemArgs.Once || reg.Ephemeral {
 			done := make(chan struct{})
 			go func() {
 				defer close(done)
