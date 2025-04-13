@@ -149,6 +149,7 @@ func (p *Poller) runTaskWithRecover(ctx context.Context, task *runnerv1.Task) {
 		}
 	}()
 	// verify owner and repo
+	fmt.Println("正在匹配仓库...", task.Context.Fields["repository"].GetStringValue(), p.cfg.Runner.AllowedRepos)
 	if matchAllowedRepo(task.Context.Fields["repository"].GetStringValue(), p.cfg.Runner.AllowedRepos) {
 		log.WithError(errors.New("allowed repos not match")).Error("allowed repos not match")
 		return
