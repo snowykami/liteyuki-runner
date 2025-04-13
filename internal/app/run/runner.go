@@ -267,8 +267,8 @@ func matchAllowedRepo(targetRepo string, allowedRepos []string) bool {
 			continue
 		}
 		allowedOwner, allowedRepoName := parts[0], parts[1]
-		if (allowedOwner == "*" || allowedOwner == targetOwner) &&
-			(allowedRepoName == "*" || allowedRepoName == targetRepoName) {
+		if (allowedOwner == "*" || strings.ToLower(allowedOwner) == strings.ToLower(targetOwner)) &&
+			(allowedRepoName == "*" || strings.ToLower(allowedRepoName) == strings.ToLower(targetRepoName)) {
 			return true
 		}
 	}
