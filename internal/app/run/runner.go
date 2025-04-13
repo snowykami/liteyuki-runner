@@ -124,8 +124,9 @@ func (r *Runner) run(ctx context.Context, task *runnerv1.Task, reporter *report.
 	// verify owner and repo
 	if !matchAllowedRepo(task.Context.Fields["repository"].GetStringValue(), r.cfg.Runner.AllowedRepos) {
 		// not matched
-		log.Warnf("Repository %s not in allowed_repos to run workflows, please replace with other labels", task.Context.Fields["repository"].GetStringValue())
-		reporter.Logf("Repository %s not in allowed_repos to run workflows, please replace with other labels", task.Context.Fields["repository"].GetStringValue())
+		log.Warnf("Repository %s is not in allowed_repos to run workflows", task.Context.Fields["repository"].GetStringValue())
+		reporter.Logf("Repository %s is not allowed to run workflows on this runner, please add \"public\" label in \"runs-on\" to use public runners\n"+
+			"储存库 %s 不被允许在此 runner 上运行 workflows，请在 runs-on 中加上 \"public\" 以使用我们的赞助商 007idc(https://www.007idc.cn/)提供的runners", task.Context.Fields["repository"].GetStringValue())
 		return errors.New("repository not in allowed_repos")
 	}
 
