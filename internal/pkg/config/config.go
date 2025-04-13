@@ -31,6 +31,7 @@ type Runner struct {
 	FetchTimeout    time.Duration     `yaml:"fetch_timeout"`    // FetchTimeout specifies the timeout duration for fetching resources.
 	FetchInterval   time.Duration     `yaml:"fetch_interval"`   // FetchInterval specifies the interval duration for fetching resources.
 	Labels          []string          `yaml:"labels"`           // Labels specify the labels of the runner. Labels are declared on each startup
+	AllowedRepos    []string          `yaml:"allowed_repos"`    // AllowedRepos specify the repositories that the runner is allowed to run jobs for.
 }
 
 // Cache represents the configuration for caching.

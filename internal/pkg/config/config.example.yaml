@@ -42,6 +42,13 @@ runner:
     - "ubuntu-22.04:docker://docker.gitea.com/runner-images:ubuntu-22.04"
     - "ubuntu-20.04:docker://docker.gitea.com/runner-images:ubuntu-20.04"
 
+  # for global runner
+  allowed_repos:
+    - "org1/repo1"
+    - "org1/repo2"
+    - "org2/*"
+    - "user1/*"
+
 cache:
   # Enable cache server to use actions/cache.
   enabled: true
@@ -70,7 +77,7 @@ container:
   # And other options to be used when the container is started (eg, --add-host=my.gitea.url:host-gateway).
   options:
   # The parent directory of a job's working directory.
-  # NOTE: There is no need to add the first '/' of the path as act_runner will add it automatically. 
+  # NOTE: There is no need to add the first '/' of the path as act_runner will add it automatically.
   # If the path starts with '/', the '/' will be trimmed.
   # For example, if the parent directory is /path/to/my/dir, workdir_parent should be path/to/my/dir
   # If it's empty, /workspace will be used.

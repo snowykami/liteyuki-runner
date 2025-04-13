@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -147,6 +148,11 @@ func (p *Poller) runTaskWithRecover(ctx context.Context, task *runnerv1.Task) {
 			log.WithError(err).Error("panic in runTaskWithRecover")
 		}
 	}()
+	// verify owner and repo
+	if matchAllowedRepo(task.Context.Fields["repository"].GetStringValue(), p.cfg.Runner.AllowedRepos) {
+		log.WithError(errors.New("allowed repos not match")).Error("allowed repos not match")
+		return
+	}
 
 	if err := p.runner.Run(ctx, task); err != nil {
 		log.WithError(err).Error("failed to run task")
@@ -186,4 +192,32 @@ func (p *Poller) fetchTask(ctx context.Context) (*runnerv1.Task, bool) {
 	p.tasksVersion.CompareAndSwap(resp.Msg.TasksVersion, 0)
 
 	return resp.Msg.Task, true
+}
+
+func matchAllowedRepo(targetRepo string, allowedRepos []string) bool {
+	if len(allowedRepos) == 0 {
+		return true
+	}
+
+	parts := strings.Split(targetRepo, "/")
+	if len(parts) != 2 {
+		log.Errorf("Invalid repository format: %s", targetRepo)
+		return false
+	}
+
+	targetOwner, targetRepoName := parts[0], parts[1]
+
+	for _, allowedRepo := range allowedRepos {
+		parts := strings.Split(allowedRepo, "/")
+		if len(parts) != 2 {
+			log.Warnf("Invalid allowed repository format: %s", allowedRepo)
+			continue
+		}
+		allowedOwner, allowedRepoName := parts[0], parts[1]
+		if (allowedOwner == "*" || allowedOwner == targetOwner) &&
+			(allowedRepoName == "*" || allowedRepoName == targetRepoName) {
+			return true
+		}
+	}
+	return false
 }
