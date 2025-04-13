@@ -1,3 +1,26 @@
+# Liteyuki Runner
+
+## 需求
+如果你的Gitea实例偏公共性质，又不想让所有人都能使用Actions，且不想配置多个Runner来细化给每个仓库和组织一个
+
+那么这个项目应该可以满足你的需求
+
+遵循源项目许可证进行二次分发
+
+## 特色
+```yaml
+# 仅需要在原有的配置文件 runner项下添加一个allowed_repos: []string的配置项目
+# 配置非常简单，owner/repo格式。*表示所有repo或者owner
+runner:
+    allowed_repos:
+        - "org1/repo1"  # 仅允许org1/repo1使用
+        - "org1/repo2"  # 仅允许org1/repo2使用
+        - "org2/*"  # 仅允许org2下的所有repo使用
+        - "user1/*" # 仅允许user1下的所有repo使用
+```
+
+> 下面是Gitea Runner官方文档
+
 # act runner
 
 Act runner is a runner for Gitea based on [Gitea fork](https://gitea.com/gitea/act) of [act](https://github.com/nektos/act).
@@ -26,8 +49,8 @@ make docker
 
 ## Quickstart
 
-Actions are disabled by default, so you need to add the following to the configuration file of your Gitea instance to enable it: 
-  
+Actions are disabled by default, so you need to add the following to the configuration file of your Gitea instance to enable it:
+
 ```ini
 [actions]
 ENABLED=true
