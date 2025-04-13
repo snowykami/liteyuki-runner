@@ -6,6 +6,7 @@ package run
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -119,6 +120,14 @@ func (r *Runner) run(ctx context.Context, task *runnerv1.Task, reporter *report.
 			err = fmt.Errorf("panic: %v", r)
 		}
 	}()
+
+	// verify owner and repo
+	if !matchAllowedRepo(task.Context.Fields["repository"].GetStringValue(), r.cfg.Runner.AllowedRepos) {
+		// not matched
+		log.Warnf("Repository %s not in allowed_repos to run workflows, please replace with other labels", task.Context.Fields["repository"].GetStringValue())
+		reporter.Logf("Repository %s not in allowed_repos to run workflows, please replace with other labels", task.Context.Fields["repository"].GetStringValue())
+		return errors.New("repository not in allowed_repos")
+	}
 
 	reporter.Logf("%s(version:%s) received task %v of job %v, be triggered by event: %s", r.name, ver.Version(), task.Id, task.Context.Fields["job"].GetStringValue(), task.Context.Fields["event_name"].GetStringValue())
 
@@ -237,4 +246,31 @@ func (r *Runner) Declare(ctx context.Context, labels []string) (*connect.Respons
 		Version: ver.Version(),
 		Labels:  labels,
 	}))
+}
+
+func matchAllowedRepo(targetRepo string, allowedRepos []string) bool {
+	if len(allowedRepos) == 0 {
+		return true
+	}
+
+	parts := strings.Split(targetRepo, "/")
+	if len(parts) != 2 {
+		log.Errorf("Invalid repository format: %s", targetRepo)
+		return false
+	}
+	targetOwner, targetRepoName := parts[0], parts[1]
+
+	for _, allowedRepo := range allowedRepos {
+		parts := strings.Split(allowedRepo, "/")
+		if len(parts) != 2 {
+			log.Warnf("Invalid allowed repository format: %s", allowedRepo)
+			continue
+		}
+		allowedOwner, allowedRepoName := parts[0], parts[1]
+		if (allowedOwner == "*" || allowedOwner == targetOwner) &&
+			(allowedRepoName == "*" || allowedRepoName == targetRepoName) {
+			return true
+		}
+	}
+	return false
 }
