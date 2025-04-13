@@ -1,7 +1,8 @@
 # Liteyuki Runner
 
 ## 需求
-如果你的Gitea实例偏公共性质，又不想让所有人都能使用Actions，且不想配置多个Runner来细化给每个仓库和组织一个
+如果你的Gitea实例偏公共性质，又不想让所有人都能使用Actions，
+且有多个组织/用户，又不想配置多个Runner给每个仓库和组织分配一个
 
 那么这个项目应该可以满足你的需求
 
@@ -18,6 +19,12 @@ runner:
         - "org2/*"  # 仅允许org2下的所有repo使用
         - "user1/*" # 仅允许user1下的所有repo使用
 ```
+
+## 安装
+- (安装方法和Gitea Runner相同，只是镜像换成了我们的)
+
+    `docker pull reg.liteyuki.icu/comp/liteyuki-runner:latest`
+
 
 > 下面是Gitea Runner官方文档
 
