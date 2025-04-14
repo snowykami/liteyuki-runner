@@ -18,6 +18,8 @@ runner:
         - "org1/repo2"  # 仅允许org1/repo2使用
         - "org2/*"  # 仅允许org2下的所有repo使用
         - "user1/*" # 仅允许user1下的所有repo使用
+    blacklist_mode: false # 是否启用黑名单模式，启用后为反向选择
+    reject_text: "This repository {REPO} is not allowed to use this runner {RUNNER} to run workflows." # 禁止使用actions时的提示文本
 ```
 
 ## 安装

@@ -48,6 +48,10 @@ runner:
     - "org1/repo2"
     - "org2/*"
     - "user1/*"
+  # for global runner, if true, the runner will only run jobs except the allowed_repos.
+  blacklist_mode: false
+  # reject_text is used to show the reason why the job is rejected.
+  reject_text: "This runner is not allowed to run this job in this repository: %s."
 
 cache:
   # Enable cache server to use actions/cache.

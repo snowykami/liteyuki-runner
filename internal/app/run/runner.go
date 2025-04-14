@@ -121,13 +121,14 @@ func (r *Runner) run(ctx context.Context, task *runnerv1.Task, reporter *report.
 		}
 	}()
 
-	// verify owner and repo
-	if !matchAllowedRepo(task.Context.Fields["repository"].GetStringValue(), r.cfg.Runner.AllowedRepos) {
-		// not matched
-		log.Warnf("Repository %s is not in allowed_repos to run workflows", task.Context.Fields["repository"].GetStringValue())
-		reporter.Logf("Repository %s is not allowed to run workflows on this runner, please add \"public\" label in \"runs-on\" to use public runners\n"+
-			"储存库 %s 不被允许在此 runner 上运行 workflows，请在 runs-on 中加上 \"public\" 以使用我们的赞助商 007idc(https://www.007idc.cn/)提供的runners", task.Context.Fields["repository"].GetStringValue())
-		return errors.New("repository not in allowed_repos")
+	matched := matchAllowedRepo(task.Context.Fields["repository"].GetStringValue(), r.cfg.Runner.AllowedRepos)
+	if (r.cfg.Runner.BlacklistMode && matched) || (!r.cfg.Runner.BlacklistMode && !matched) {
+		// replace with the real repo name {REPO} and runner name {RUNNER}
+		formattedRejectText := strings.ReplaceAll(r.cfg.Runner.RejectText, "{REPO}", task.Context.Fields["repository"].GetStringValue())
+		formattedRejectText = strings.ReplaceAll(formattedRejectText, "{RUNNER}", r.name)
+		log.Warnf(formattedRejectText)
+		reporter.Logf(formattedRejectText)
+		return errors.New("repository not matched allowed_repos")
 	}
 
 	reporter.Logf("%s(version:%s) received task %v of job %v, be triggered by event: %s", r.name, ver.Version(), task.Id, task.Context.Fields["job"].GetStringValue(), task.Context.Fields["event_name"].GetStringValue())

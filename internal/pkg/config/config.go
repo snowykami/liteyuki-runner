@@ -32,6 +32,8 @@ type Runner struct {
 	FetchInterval   time.Duration     `yaml:"fetch_interval"`   // FetchInterval specifies the interval duration for fetching resources.
 	Labels          []string          `yaml:"labels"`           // Labels specify the labels of the runner. Labels are declared on each startup
 	AllowedRepos    []string          `yaml:"allowed_repos"`    // AllowedRepos specify the repositories that the runner is allowed to run jobs for.
+	BlacklistMode	  bool              `yaml:"blacklist_mode"`   // BlacklistMode indicates whether the runner operates in blacklist mode.
+	RejectText	  string            `yaml:"reject_text"`      // RejectText specifies the text to be displayed when a job is rejected.
 }
 
 // Cache represents the configuration for caching.
