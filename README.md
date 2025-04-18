@@ -26,9 +26,9 @@ runner:
 - (安装方法和Gitea Runner相同，只是镜像换成了我们的)
 
 ```bash
-docker pull reg.liteyuki.icu/comp/liteyuki-runner:latest
+docker pull reg.liteyuki.icu/actions/liteyuki-runner:latest
 
-podman pull reg.liteyuki.icu/comp/liteyuki-runner:latest
+podman pull reg.liteyuki.icu/actions/liteyuki-runner:latest
 ```
 
 

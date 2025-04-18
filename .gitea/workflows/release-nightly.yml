@@ -50,7 +50,7 @@ jobs:
                       linux/arm64
                   push: true
                   tags: |
-                      reg.liteyuki.icu/comp/liteyuki-runner:latest
+                      reg.liteyuki.icu/actions/liteyuki-runner:latest
 
             - name: Build and push dind
               uses: docker/build-push-action@v5
@@ -63,7 +63,7 @@ jobs:
                       linux/arm64
                   push: true
                   tags: |
-                      reg.liteyuki.icu/comp/liteyuki-runner:latest-dind
+                      reg.liteyuki.icu/actions/liteyuki-runner:latest-dind
 
             - name: Build and push dind-rootless
               uses: docker/build-push-action@v5
@@ -76,4 +76,4 @@ jobs:
                       linux/arm64
                   push: true
                   tags: |
-                      reg.liteyuki.icu/comp/liteyuki-runner:latest-dind-rootless
+                      reg.liteyuki.icu/actions/liteyuki-runner:latest-dind-rootless
