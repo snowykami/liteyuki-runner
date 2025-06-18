@@ -10,7 +10,7 @@ require (
 	github.com/docker/docker v25.0.5+incompatible
 	github.com/joho/godotenv v1.5.1
 	github.com/mattn/go-isatty v0.0.20
-	github.com/nektos/act v0.0.0 // will be replaced
+	github.com/nektos/act v0.2.78 // will be replaced
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.9.0
