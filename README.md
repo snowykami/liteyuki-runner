@@ -1,5 +1,45 @@
 # Gitea Runner
 
+Liteyuki Runner is a downstream build of [Gitea Runner](https://gitea.com/gitea/runner) with repository-level runner access control and Liteyuki image publishing.
+
+- Main repository: [snowykami/liteyuki-runner on GitHub](https://github.com/snowykami/liteyuki-runner)
+- Liteyuki Gitea mirror: [snowykami/liteyuki-runner on Liteyuki Gitea](https://git.liteyuki.org/snowykami/liteyuki-runner)
+- Container images: `git.liteyuki.org/liteyuki-docker/liteyuki-runner:latest`, `:latest-dind`, and `:latest-dind-rootless`
+- Upstream documentation: [Gitea Actions](https://docs.gitea.com/usage/actions/overview) and [Act Runner](https://docs.gitea.com/usage/actions/act-runner)
+- Local configuration reference: [config.example.yaml](internal/pkg/config/config.example.yaml)
+
+## Liteyuki Changes
+
+### Repository access control
+
+Liteyuki Runner can limit which repositories may use a runner. This is useful for global or shared runners that should only accept jobs from trusted repositories.
+
+Add the following fields under `runner` in `config.yaml`:
+
+```yaml
+runner:
+  allowed_repos:
+    - "org1/repo1"
+    - "org2/*"
+    - "*/infra"
+  blacklist_mode: false
+  reject_text: "This runner is not allowed to run this job in this repository: {REPO}."
+```
+
+`allowed_repos` supports `owner/repo`, `owner/*`, `*/repo`, and `*/*`. Matching is case-insensitive.
+
+When `blacklist_mode` is `false`, only matched repositories are allowed. When it is `true`, matched repositories are rejected and all others are allowed. `{REPO}` and `{RUNNER}` in `reject_text` are replaced with the rejected repository name and runner name.
+
+### Image publishing
+
+The Gitea workflow builds the `basic`, `dind`, and `dind-rootless` Docker targets and publishes them to Liteyuki Gitea's container registry:
+
+```text
+git.liteyuki.org/liteyuki-docker/liteyuki-runner:latest
+git.liteyuki.org/liteyuki-docker/liteyuki-runner:latest-dind
+git.liteyuki.org/liteyuki-docker/liteyuki-runner:latest-dind-rootless
+```
+
 ## Installation
 
 ### Prerequisites
