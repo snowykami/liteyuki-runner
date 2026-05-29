@@ -43,6 +43,9 @@ type Runner struct {
 	Labels              []string          `yaml:"labels"`                 // Labels specify the labels of the runner. Labels are declared on each startup
 	GithubMirror        string            `yaml:"github_mirror"`          // GithubMirror defines what mirrors should be used when using github
 	AllocatePTY         bool              `yaml:"allocate_pty"`           // AllocatePTY allocates a pseudo-TTY for each step's process. Default is false, matching GitHub's actions/runner. Enable only for jobs that need an interactive terminal; tools like docker build emit redrawing progress frames into the captured log when a TTY is present. Applies to both host and docker backends.
+	AllowedRepos        []string          `yaml:"allowed_repos"`          // AllowedRepos specifies which repositories this runner may run jobs for. Supports owner/repo, owner/*, */repo, and */*.
+	BlacklistMode       bool              `yaml:"blacklist_mode"`         // BlacklistMode treats AllowedRepos as a deny list instead of an allow list.
+	RejectText          string            `yaml:"reject_text"`            // RejectText is logged when a job is rejected. {REPO} and {RUNNER} are replaced.
 }
 
 // Cache represents the configuration for caching.
@@ -186,6 +189,9 @@ func LoadDefault(file string) (*Config, error) {
 	}
 	if cfg.Runner.ReportCloseTimeout <= 0 {
 		cfg.Runner.ReportCloseTimeout = 10 * time.Second
+	}
+	if cfg.Runner.RejectText == "" {
+		cfg.Runner.RejectText = "This runner is not allowed to run this job in this repository: {REPO}."
 	}
 	if cfg.Metrics.Addr == "" {
 		cfg.Metrics.Addr = "127.0.0.1:9101"

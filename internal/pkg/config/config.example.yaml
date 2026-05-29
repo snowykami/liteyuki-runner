@@ -82,6 +82,13 @@ runner:
   # terminal; tools like `docker build` emit redrawing progress frames into the captured log
   # when a TTY is present.
   allocate_pty: false
+  # Repositories this runner is allowed to run jobs for. Supports owner/repo, owner/*, */repo, and */*.
+  # Leave empty to allow all repositories.
+  allowed_repos: []
+  # When true, allowed_repos is treated as a deny list instead of an allow list.
+  blacklist_mode: false
+  # Message logged when a repository is rejected. {REPO} and {RUNNER} are replaced.
+  reject_text: "This runner is not allowed to run this job in this repository: {REPO}."
 
 cache:
   # Enable cache server to use actions/cache.

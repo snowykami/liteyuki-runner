@@ -244,6 +244,15 @@ func (r *Runner) run(ctx context.Context, task *runnerv1.Task, reporter *report.
 		}
 	}()
 
+	repo := task.Context.Fields["repository"].GetStringValue()
+	if !r.canRunRepo(repo) {
+		rejectText := strings.ReplaceAll(r.cfg.Runner.RejectText, "{REPO}", repo)
+		rejectText = strings.ReplaceAll(rejectText, "{RUNNER}", r.name)
+		log.Warnf("%s", rejectText)
+		reporter.Logf("%s", rejectText)
+		return errors.New("repository not matched allowed_repos")
+	}
+
 	reporter.Logf("%s(version:%s) received task %v of job %v, be triggered by event: %s", r.name, ver.Version(), task.Id, task.Context.Fields["job"].GetStringValue(), task.Context.Fields["event_name"].GetStringValue())
 
 	workflow, jobID, err := generateWorkflow(task)
@@ -490,4 +499,45 @@ func (r *Runner) Declare(ctx context.Context, labels []string) (*connect.Respons
 		Version: ver.Version(),
 		Labels:  labels,
 	}))
+}
+
+func (r *Runner) canRunRepo(repo string) bool {
+	matched := matchAllowedRepo(repo, r.cfg.Runner.AllowedRepos)
+	if r.cfg.Runner.BlacklistMode {
+		return !matched
+	}
+	return matched
+}
+
+func matchAllowedRepo(targetRepo string, allowedRepos []string) bool {
+	if len(allowedRepos) == 0 {
+		return true
+	}
+
+	targetOwner, targetRepoName, ok := splitRepo(targetRepo)
+	if !ok {
+		log.Errorf("invalid repository format: %s", targetRepo)
+		return false
+	}
+
+	for _, allowedRepo := range allowedRepos {
+		allowedOwner, allowedRepoName, ok := splitRepo(allowedRepo)
+		if !ok {
+			log.Warnf("invalid allowed repository format: %s", allowedRepo)
+			continue
+		}
+		if matchRepoPart(allowedOwner, targetOwner) && matchRepoPart(allowedRepoName, targetRepoName) {
+			return true
+		}
+	}
+	return false
+}
+
+func splitRepo(repo string) (string, string, bool) {
+	owner, name, ok := strings.Cut(repo, "/")
+	return owner, name, ok && owner != "" && name != "" && !strings.Contains(name, "/")
+}
+
+func matchRepoPart(pattern, value string) bool {
+	return pattern == "*" || strings.EqualFold(pattern, value)
 }

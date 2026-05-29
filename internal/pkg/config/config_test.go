@@ -41,6 +41,25 @@ cache:
 	require.NoError(t, err)
 }
 
+func TestLoadDefault_LoadsAllowedRepos(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	require.NoError(t, os.WriteFile(path, []byte(`
+runner:
+  allowed_repos:
+    - "owner/repo"
+    - "org/*"
+  blacklist_mode: true
+  reject_text: "No access for {REPO} on {RUNNER}."
+`), 0o600))
+
+	cfg, err := LoadDefault(path)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"owner/repo", "org/*"}, cfg.Runner.AllowedRepos)
+	assert.True(t, cfg.Runner.BlacklistMode)
+	assert.Equal(t, "No access for {REPO} on {RUNNER}.", cfg.Runner.RejectText)
+}
+
 func TestLoadDefault_DefaultsWorkdirCleanupAge(t *testing.T) {
 	cfg, err := LoadDefault("")
 	require.NoError(t, err)
