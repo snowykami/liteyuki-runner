@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/docker/docker/client"
+	"github.com/moby/moby/client"
 )
 
 func CheckIfDockerRunning(ctx context.Context, configDockerHost string) error {
@@ -19,13 +19,13 @@ func CheckIfDockerRunning(ctx context.Context, configDockerHost string) error {
 		opts = append(opts, client.WithHost(configDockerHost))
 	}
 
-	cli, err := client.NewClientWithOpts(opts...)
+	cli, err := client.New(opts...)
 	if err != nil {
 		return err
 	}
 	defer cli.Close()
 
-	_, err = cli.Ping(ctx)
+	_, err = cli.Ping(ctx, client.PingOptions{})
 	if err != nil {
 		return fmt.Errorf("cannot ping the docker daemon, is it running? %w", err)
 	}

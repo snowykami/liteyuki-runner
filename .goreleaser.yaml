@@ -1,5 +1,7 @@
 version: 2
 
+project_name: gitea-runner
+
 before:
   hooks:
     - go mod tidy
@@ -16,6 +18,7 @@ builds:
   - amd64
   - arm
   - arm64
+  - loong64
   - s390x
   - riscv64
   goarm:
@@ -62,7 +65,7 @@ builds:
   flags:
   - -trimpath
   ldflags:
-  - -s -w -X gitea.com/gitea/act_runner/internal/pkg/ver.version={{ .Summary }}
+  - -s -w -X gitea.com/gitea/runner/internal/pkg/ver.version={{ .Summary }}
   binary: >-
     {{ .ProjectName }}-
     {{- .Version }}-
@@ -85,7 +88,7 @@ blobs:
     provider: s3
     bucket: "{{ .Env.S3_BUCKET }}"
     region: "{{ .Env.S3_REGION }}"
-    directory: "act_runner/{{.Version}}"
+    directory: "gitea-runner/{{.Version}}"
     extra_files:
       - glob: ./**.xz
       - glob: ./**.sha256

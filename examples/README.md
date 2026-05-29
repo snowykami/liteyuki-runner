@@ -1,4 +1,4 @@
-# Usage Examples for `act_runner`
+# Usage Examples for `gitea-runner`
 
 Welcome to our collection of usage and deployment examples specifically designed for Gitea setups. Whether you're a beginner or an experienced user, you'll find practical resources here that you can directly apply to enhance your Gitea experience. We encourage you to contribute your own insights and knowledge to make this collection even more comprehensive and valuable.
 

@@ -1,42 +1,4 @@
-# Liteyuki Runner
-
-## 需求
-如果你的Gitea实例偏公共性质，又不想让所有人都能使用Actions，
-且有多个组织/用户，又不想配置多个Runner给每个仓库和组织分配一个
-
-那么这个项目应该可以满足你的需求
-
-遵循源项目许可证进行二次分发
-
-## 特色
-```yaml
-# 仅需要在原有的配置文件 runner项下添加一个allowed_repos: []string的配置项目
-# 配置非常简单，owner/repo格式。*表示所有repo或者owner
-runner:
-    allowed_repos:
-        - "org1/repo1"  # 仅允许org1/repo1使用
-        - "org1/repo2"  # 仅允许org1/repo2使用
-        - "org2/*"  # 仅允许org2下的所有repo使用
-        - "user1/*" # 仅允许user1下的所有repo使用
-    blacklist_mode: false # 是否启用黑名单模式，启用后为反向选择
-    reject_text: "This repository {REPO} is not allowed to use this runner {RUNNER} to run workflows." # 禁止使用actions时的提示文本
-```
-
-## 安装
-- (安装方法和Gitea Runner相同，只是镜像换成了我们的)
-
-```bash
-docker pull reg.liteyuki.icu/actions/liteyuki-runner:latest
-
-podman pull reg.liteyuki.icu/actions/liteyuki-runner:latest
-```
-
-
-> 下面是Gitea Runner官方文档
-
-# act runner
-
-Act runner is a runner for Gitea based on [Gitea fork](https://gitea.com/gitea/act) of [act](https://github.com/nektos/act).
+# Gitea Runner
 
 ## Installation
 
@@ -46,7 +8,7 @@ Docker Engine Community version is required for docker mode. To install Docker C
 
 ### Download pre-built binary
 
-Visit [here](https://dl.gitea.com/act_runner/) and download the right version for your platform.
+Visit [here](https://dl.gitea.com/gitea-runner/) and download the right version for your platform.
 
 ### Build from source
 
@@ -72,7 +34,7 @@ ENABLED=true
 ### Register
 
 ```bash
-./act_runner register
+./gitea-runner register
 ```
 
 And you will be asked to input:
@@ -104,7 +66,7 @@ INFO Runner registered successfully.
 You can also register with command line arguments.
 
 ```bash
-./act_runner register --instance http://192.168.8.8:3000 --token <my_runner_token> --no-interactive
+./gitea-runner register --instance http://192.168.8.8:3000 --token <my_runner_token> --no-interactive
 ```
 
 If the registry succeed, it will run immediately. Next time, you could run the runner directly.
@@ -112,32 +74,69 @@ If the registry succeed, it will run immediately. Next time, you could run the r
 ### Run
 
 ```bash
-./act_runner daemon
+./gitea-runner daemon
 ```
 
 ### Run with docker
 
 ```bash
-docker run -e GITEA_INSTANCE_URL=https://your_gitea.com -e GITEA_RUNNER_REGISTRATION_TOKEN=<your_token> -v /var/run/docker.sock:/var/run/docker.sock --name my_runner gitea/act_runner:nightly
+docker run -e GITEA_INSTANCE_URL=https://your_gitea.com -e GITEA_RUNNER_REGISTRATION_TOKEN=<your_token> -v /var/run/docker.sock:/var/run/docker.sock --name my_runner gitea/runner:nightly
 ```
+
+Mount a volume on `/data` if you want the registration file and optional config to survive container recreation (see [scripts/run.sh](scripts/run.sh)).
 
 ### Configuration
 
-You can also configure the runner with a configuration file.
-The configuration file is a YAML file, you can generate a sample configuration file with `./act_runner generate-config`.
+The runner is configured with a YAML file. Generate a starting point (this matches what ships in the tree):
 
 ```bash
-./act_runner generate-config > config.yaml
+./gitea-runner generate-config > config.yaml
 ```
 
-You can specify the configuration file path with `-c`/`--config` argument.
+Pass it with `-c` / `--config` on any command that loads configuration (`register`, `daemon`, `cache-server`):
 
 ```bash
-./act_runner -c config.yaml register # register with config file
-./act_runner -c config.yaml daemon # run with config file
+./gitea-runner -c config.yaml register
+./gitea-runner -c config.yaml daemon
+./gitea-runner -c config.yaml cache-server
 ```
 
-You can read the latest version of the configuration file online at [config.example.yaml](internal/pkg/config/config.example.yaml).
+Every option is described in [config.example.yaml](internal/pkg/config/config.example.yaml) (the same content `generate-config` prints).
+
+#### Without a config file
+
+If you omit `-c`, built-in defaults apply (same as an empty YAML document). A small set of **deprecated** environment variables can still override parts of that default config, but **only when no `-c` path was given**; they are ignored if you use a config file:
+
+| Variable | Effect |
+| --- | --- |
+| `GITEA_DEBUG` | If true, sets log level to `debug` |
+| `GITEA_TRACE` | If true, sets log level to `trace` |
+| `GITEA_RUNNER_CAPACITY` | Concurrent jobs (integer) |
+| `GITEA_RUNNER_FILE` | Registration state file path (default `.runner`) |
+| `GITEA_RUNNER_ENVIRON` | Extra job env vars as comma-separated `KEY:VALUE` pairs |
+| `GITEA_RUNNER_ENV_FILE` | Path to an env file merged into job env (same idea as `runner.env_file` in YAML) |
+
+Prefer a YAML file for all settings.
+
+#### Registration vs config labels
+
+If `runner.labels` is set in the YAML file, those labels are used during `register` and the `--labels` CLI flag is ignored.
+
+#### External cache (`actions/cache`)
+
+If `cache.external_server` is set, you must set `cache.external_secret` to the same value on this runner and on the standalone cache server. Run the server with `gitea-runner cache-server` using a config that defines `cache.external_secret` (and matching `cache.dir` / host / port as needed). Flags `--dir`, `--host`, and `--port` on `cache-server` override the file.
+
+#### Official Docker image
+
+Besides `GITEA_INSTANCE_URL` and `GITEA_RUNNER_REGISTRATION_TOKEN`, the image entrypoint supports optional variables such as `CONFIG_FILE` (passed through as `-c`), `GITEA_RUNNER_LABELS`, `GITEA_RUNNER_EPHEMERAL`, `GITEA_RUNNER_ONCE`, `GITEA_RUNNER_NAME`, `GITEA_MAX_REG_ATTEMPTS`, `RUNNER_STATE_FILE`, and `GITEA_RUNNER_REGISTRATION_TOKEN_FILE`. See [scripts/run.sh](scripts/run.sh) for exact behavior.
+
+For a fuller container-oriented walkthrough, see [examples/docker](examples/docker/README.md).
+
+When `container.bind_workdir` is enabled, stale task workspace directories can be cleaned while the runner is idle:
+- directories older than `runner.workdir_cleanup_age` are removed (default: `24h`; set `0` to disable)
+- cleanup runs every `runner.idle_cleanup_interval` (default: `10m`; set `0` to disable)
+- only purely numeric subdirectories under `container.workdir_parent` are treated as task workspaces and may be removed
+- cleanup assumes `container.workdir_parent` is not shared across multiple runners
 
 ### Example Deployments
 

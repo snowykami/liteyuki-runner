@@ -1,0 +1,17 @@
+name: services
+on: push
+jobs:
+  services:
+    name: Reproduction of failing Services interpolation
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: nginx:alpine
+        ports:
+          - 80
+    steps:
+      - name: Echo the Postgres service ID / Network / Ports
+        run: |
+          echo "id: ${{ job.services.postgres.id }}"
+          echo "network: ${{ job.services.postgres.network }}"
+          echo "ports: ${{ job.services.postgres.ports }}"

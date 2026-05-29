@@ -8,25 +8,24 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spf13/cobra"
+	"gitea.com/gitea/runner/internal/pkg/config"
+	"gitea.com/gitea/runner/internal/pkg/ver"
 
-	"gitea.com/gitea/act_runner/internal/pkg/config"
-	"gitea.com/gitea/act_runner/internal/pkg/ver"
+	"github.com/spf13/cobra"
 )
 
 func Execute(ctx context.Context) {
-	// ./act_runner
+	// ./gitea-runner
 	rootCmd := &cobra.Command{
-		Use:          "act_runner [event name to run]\nIf no event name passed, will default to \"on: push\"",
-		Short:        "Run GitHub actions locally by specifying the event name (e.g. `push`) or an action name directly.",
-		Args:         cobra.MaximumNArgs(1),
+		Use:          "gitea-runner",
+		Short:        "Gitea Runner",
 		Version:      ver.Version(),
 		SilenceUsage: true,
 	}
 	configFile := ""
 	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "", "Config file path")
 
-	// ./act_runner register
+	// ./gitea-runner register
 	var regArgs registerArgs
 	registerCmd := &cobra.Command{
 		Use:   "register",
@@ -42,7 +41,7 @@ func Execute(ctx context.Context) {
 	registerCmd.Flags().BoolVar(&regArgs.Ephemeral, "ephemeral", false, "Configure the runner to be ephemeral and only ever be able to pick a single job (stricter than --once)")
 	rootCmd.AddCommand(registerCmd)
 
-	// ./act_runner daemon
+	// ./gitea-runner daemon
 	var daemArgs daemonArgs
 	daemonCmd := &cobra.Command{
 		Use:   "daemon",
@@ -53,10 +52,10 @@ func Execute(ctx context.Context) {
 	daemonCmd.Flags().BoolVar(&daemArgs.Once, "once", false, "Run one job then exit")
 	rootCmd.AddCommand(daemonCmd)
 
-	// ./act_runner exec
+	// ./gitea-runner exec
 	rootCmd.AddCommand(loadExecCmd(ctx))
 
-	// ./act_runner config
+	// ./gitea-runner config
 	rootCmd.AddCommand(&cobra.Command{
 		Use:   "generate-config",
 		Short: "Generate an example config file",
@@ -66,13 +65,13 @@ func Execute(ctx context.Context) {
 		},
 	})
 
-	// ./act_runner cache-server
+	// ./gitea-runner cache-server
 	var cacheArgs cacheServerArgs
 	cacheCmd := &cobra.Command{
 		Use:   "cache-server",
 		Short: "Start a cache server for the cache action",
 		Args:  cobra.MaximumNArgs(0),
-		RunE:  runCacheServer(ctx, &configFile, &cacheArgs),
+		RunE:  runCacheServer(&configFile, &cacheArgs),
 	}
 	cacheCmd.Flags().StringVarP(&cacheArgs.Dir, "dir", "d", "", "Cache directory")
 	cacheCmd.Flags().StringVarP(&cacheArgs.Host, "host", "s", "", "Host of the cache server")

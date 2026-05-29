@@ -1,0 +1,31 @@
+on: push
+
+# Exercises the reusable-workflow caller path against a local reusable workflow: passing typed
+# inputs and secrets (both an explicit map and `inherit`), and reading the called workflow's
+# outputs back through `needs`.
+jobs:
+  reusable-workflow:
+    uses: ./.github/workflows/local-reusable-workflow.yml
+    with:
+      string_required: string
+      bool_required: ${{ true }}
+      number_required: 1
+    secrets:
+      secret: keep_it_private
+
+  reusable-workflow-with-inherited-secrets:
+    uses: ./.github/workflows/local-reusable-workflow.yml
+    with:
+      string_required: string
+      bool_required: ${{ true }}
+      number_required: 1
+    secrets: inherit
+
+  output-test:
+    runs-on: ubuntu-latest
+    needs:
+      - reusable-workflow
+      - reusable-workflow-with-inherited-secrets
+    steps:
+      - run: '[[ "${{ needs.reusable-workflow.outputs.output == ''string'' }}" = "true" ]] || exit 1'
+      - run: '[[ "${{ needs.reusable-workflow-with-inherited-secrets.outputs.output == ''string'' }}" = "true" ]] || exit 1'

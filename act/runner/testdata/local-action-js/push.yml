@@ -1,0 +1,11 @@
+name: local-action-node24
+on: push
+
+jobs:
+  test-node24:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: ./actions/node24
+      with:
+        who-to-greet: 'Mona the Octocat'

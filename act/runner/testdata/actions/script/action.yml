@@ -1,0 +1,15 @@
+name: 'script'
+description: 'Run the shell scripts passed as inputs across the pre/main/post lifecycle'
+inputs:
+  main:
+    description: 'shell script to run in the main step'
+    required: false
+    default: ''
+  post:
+    description: 'shell script to run in the post step'
+    required: false
+    default: ''
+runs:
+  using: 'node24'
+  main: 'index.js'
+  post: 'post.js'

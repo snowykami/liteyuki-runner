@@ -1,0 +1,44 @@
+name: checks
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  lint:
+    name: check and test
+    runs-on: ubuntu-latest
+    env:
+      # The runner image ships a stale docker.io login; point docker at an empty config so
+      # image pulls go straight to anonymous instead of attempting (and failing) that auth
+      # first. The path must be a literal: the `runner` context is unavailable in job-level
+      # env, so `${{ runner.temp }}` would resolve to empty and config.Dir() would fall back
+      # to ~/.docker with the stale credentials.
+      DOCKER_CONFIG: /tmp/docker-noauth
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+      - name: prepare anonymous docker config
+        run: mkdir -p "$DOCKER_CONFIG" && echo '{}' > "$DOCKER_CONFIG/config.json"
+      # Pre-pull act/runner's two largest base images so a slow pull can't dominate `make test`;
+      # the rest (alpine/ubuntu) pull on demand, absorbed by the make-test -timeout. The host
+      # daemon retains them between runs, so this is usually a fast manifest re-check.
+      - name: pre-pull test images
+        run: |
+          for img in node:24-bookworm-slim nginx:alpine; do
+            for try in 1 2 3; do docker pull "$img" && break || sleep 5; done
+          done
+      - name: lint
+        run: make lint
+      - name: build
+        run: make build
+      - name: test
+        run: make test
+      # Build the dind image and run the daemon-facing tests against the docker version it
+      # ships, catching daemon-level regressions (e.g. gitea/runner#981) before release. Runs
+      # after `make test` so the images it needs are already present on the host daemon.
+      - name: test against dind image
+        run: make test-dind

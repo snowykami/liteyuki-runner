@@ -1,0 +1,100 @@
+name: release-tag
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  goreleaser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # all history for all branches and tags
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: "go.mod"
+      - name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v7
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.PASSPHRASE }}
+          fingerprint: CC64B1DB67ABBEECAB24B6455FC346329753F4B0
+      - name: goreleaser
+        uses: goreleaser/goreleaser-action@v7
+        with:
+          distribution: goreleaser-pro
+          args: release
+        env:
+          GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          S3_REGION: ${{ secrets.AWS_REGION }}
+          S3_BUCKET: ${{ secrets.AWS_BUCKET }}
+          GORELEASER_FORCE_TOKEN: "gitea"
+          GITEA_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
+  release-image:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        variant:
+          - target: basic
+            tag_suffix: ""
+          - target: dind
+            tag_suffix: "-dind"
+          - target: dind-rootless
+            tag_suffix: "-dind-rootless"
+    container:
+      image: catthehacker/ubuntu:act-latest
+    env:
+      DOCKER_ORG: gitea
+      DOCKER_LATEST: latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # all history for all branches and tags
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Set up Docker BuildX
+        uses: docker/setup-buildx-action@v4
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: "Docker meta"
+        id: docker_meta
+        uses: docker/metadata-action@v6
+        with:
+          images: |
+            ${{ env.DOCKER_ORG }}/runner
+          tags: |
+            type=semver,pattern={{major}}.{{minor}}.{{patch}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+          flavor: |
+            latest=true
+            suffix=${{ matrix.variant.tag_suffix }},onlatest=true
+
+      - name: Build and push
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          target: ${{ matrix.variant.target }}
+          platforms: |
+            linux/amd64
+            linux/arm64
+          push: true
+          tags: ${{ steps.docker_meta.outputs.tags }}
+          build-args: |
+            VERSION=${{ steps.docker_meta.outputs.version }}

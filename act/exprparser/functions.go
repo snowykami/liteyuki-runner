@@ -1,0 +1,300 @@
+// Copyright 2022 The Gitea Authors. All rights reserved.
+// Copyright 2022 The nektos/act Authors. All rights reserved.
+// SPDX-License-Identifier: MIT
+
+package exprparser
+
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"reflect"
+	"strconv"
+	"strings"
+
+	"gitea.com/gitea/runner/act/model"
+
+	"github.com/go-git/go-git/v5/plumbing/format/gitignore"
+	"github.com/rhysd/actionlint"
+)
+
+func (impl *interperterImpl) contains(search, item reflect.Value) (bool, error) {
+	switch search.Kind() {
+	case reflect.String, reflect.Int, reflect.Float64, reflect.Bool, reflect.Invalid:
+		return strings.Contains(
+			strings.ToLower(impl.coerceToString(search).String()),
+			strings.ToLower(impl.coerceToString(item).String()),
+		), nil
+
+	case reflect.Slice:
+		for i := 0; i < search.Len(); i++ {
+			arrayItem := search.Index(i).Elem()
+			result, err := impl.compareValues(arrayItem, item, actionlint.CompareOpNodeKindEq)
+			if err != nil {
+				return false, err
+			}
+
+			if isEqual, ok := result.(bool); ok && isEqual {
+				return true, nil
+			}
+		}
+	}
+
+	return false, nil
+}
+
+func (impl *interperterImpl) startsWith(searchString, searchValue reflect.Value) (bool, error) { //nolint:unparam // pre-existing issue from nektos/act
+	return strings.HasPrefix(
+		strings.ToLower(impl.coerceToString(searchString).String()),
+		strings.ToLower(impl.coerceToString(searchValue).String()),
+	), nil
+}
+
+func (impl *interperterImpl) endsWith(searchString, searchValue reflect.Value) (bool, error) { //nolint:unparam // pre-existing issue from nektos/act
+	return strings.HasSuffix(
+		strings.ToLower(impl.coerceToString(searchString).String()),
+		strings.ToLower(impl.coerceToString(searchValue).String()),
+	), nil
+}
+
+const (
+	passThrough = iota
+	bracketOpen
+	bracketClose
+)
+
+func (impl *interperterImpl) format(str reflect.Value, replaceValue ...reflect.Value) (string, error) {
+	input := impl.coerceToString(str).String()
+	var output strings.Builder
+	replacementIndex := ""
+
+	state := passThrough
+	for _, character := range input {
+		switch state {
+		case passThrough: // normal buffer output
+			switch character {
+			case '{':
+				state = bracketOpen
+
+			case '}':
+				state = bracketClose
+
+			default:
+				output.WriteRune(character)
+			}
+
+		case bracketOpen: // found {
+			switch character {
+			case '{':
+				output.WriteString("{")
+				replacementIndex = ""
+				state = passThrough
+
+			case '}':
+				index, err := strconv.ParseInt(replacementIndex, 10, 32)
+				if err != nil {
+					return "", fmt.Errorf("The following format string is invalid: '%s'", input)
+				}
+
+				replacementIndex = ""
+
+				if len(replaceValue) <= int(index) {
+					return "", fmt.Errorf("The following format string references more arguments than were supplied: '%s'", input)
+				}
+
+				output.WriteString(impl.coerceToString(replaceValue[index]).String())
+
+				state = passThrough
+
+			default:
+				replacementIndex += string(character)
+			}
+
+		case bracketClose: // found }
+			switch character {
+			case '}':
+				output.WriteString("}")
+				replacementIndex = ""
+				state = passThrough
+
+			default:
+				panic("Invalid format parser state")
+			}
+		}
+	}
+
+	if state != passThrough {
+		switch state {
+		case bracketOpen:
+			return "", fmt.Errorf("Unclosed brackets. The following format string is invalid: '%s'", input)
+
+		case bracketClose:
+			return "", fmt.Errorf("Closing bracket without opening one. The following format string is invalid: '%s'", input)
+		}
+	}
+
+	return output.String(), nil
+}
+
+func (impl *interperterImpl) join(array, sep reflect.Value) (string, error) { //nolint:unparam // pre-existing issue from nektos/act
+	separator := impl.coerceToString(sep).String()
+	switch array.Kind() {
+	case reflect.Slice:
+		var items []string
+		for i := 0; i < array.Len(); i++ {
+			items = append(items, impl.coerceToString(array.Index(i).Elem()).String())
+		}
+
+		return strings.Join(items, separator), nil
+	default:
+		return strings.Join([]string{impl.coerceToString(array).String()}, separator), nil
+	}
+}
+
+func (impl *interperterImpl) toJSON(value reflect.Value) (string, error) {
+	if value.Kind() == reflect.Invalid {
+		return "null", nil
+	}
+
+	json, err := json.MarshalIndent(value.Interface(), "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("Cannot convert value to JSON. Cause: %v", err)
+	}
+
+	return string(json), nil
+}
+
+func (impl *interperterImpl) fromJSON(value reflect.Value) (any, error) {
+	if value.Kind() != reflect.String {
+		return nil, fmt.Errorf("Cannot parse non-string type %v as JSON", value.Kind())
+	}
+
+	var data any
+
+	err := json.Unmarshal([]byte(value.String()), &data)
+	if err != nil {
+		return nil, fmt.Errorf("Invalid JSON: %v", err)
+	}
+
+	return data, nil
+}
+
+func (impl *interperterImpl) hashFiles(paths ...reflect.Value) (string, error) {
+	var ps []gitignore.Pattern
+
+	const cwdPrefix = "." + string(filepath.Separator)
+	const excludeCwdPrefix = "!" + cwdPrefix
+	for _, path := range paths {
+		if path.Kind() == reflect.String {
+			cleanPath := path.String()
+			if strings.HasPrefix(cleanPath, cwdPrefix) {
+				cleanPath = cleanPath[len(cwdPrefix):]
+			} else if strings.HasPrefix(cleanPath, excludeCwdPrefix) {
+				cleanPath = "!" + cleanPath[len(excludeCwdPrefix):]
+			}
+			ps = append(ps, gitignore.ParsePattern(cleanPath, nil))
+		} else {
+			return "", errors.New("Non-string path passed to hashFiles")
+		}
+	}
+
+	matcher := gitignore.NewMatcher(ps)
+
+	var files []string
+	if err := filepath.Walk(impl.config.WorkingDir, func(path string, fi fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		sansPrefix := strings.TrimPrefix(path, impl.config.WorkingDir+string(filepath.Separator))
+		parts := strings.Split(sansPrefix, string(filepath.Separator))
+		if fi.IsDir() || !matcher.Match(parts, fi.IsDir()) {
+			return nil
+		}
+		files = append(files, path)
+		return nil
+	}); err != nil {
+		return "", fmt.Errorf("Unable to filepath.Walk: %v", err)
+	}
+
+	if len(files) == 0 {
+		return "", nil
+	}
+
+	hasher := sha256.New()
+
+	for _, file := range files {
+		f, err := os.Open(file)
+		if err != nil {
+			return "", fmt.Errorf("Unable to os.Open: %v", err)
+		}
+
+		if _, err := io.Copy(hasher, f); err != nil {
+			return "", fmt.Errorf("Unable to io.Copy: %v", err)
+		}
+
+		if err := f.Close(); err != nil {
+			return "", fmt.Errorf("Unable to Close file: %v", err)
+		}
+	}
+
+	return hex.EncodeToString(hasher.Sum(nil)), nil
+}
+
+func (impl *interperterImpl) getNeedsTransitive(job *model.Job) []string {
+	needs := job.Needs()
+
+	for _, need := range needs {
+		parentNeeds := impl.getNeedsTransitive(impl.config.Run.Workflow.GetJob(need))
+		needs = append(needs, parentNeeds...)
+	}
+
+	return needs
+}
+
+func (impl *interperterImpl) always() (bool, error) {
+	return true, nil
+}
+
+func (impl *interperterImpl) jobSuccess() (bool, error) { //nolint:unparam // pre-existing issue from nektos/act
+	jobs := impl.config.Run.Workflow.Jobs
+	jobNeeds := impl.getNeedsTransitive(impl.config.Run.Job())
+
+	for _, needs := range jobNeeds {
+		if jobs[needs].Result != "success" {
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
+func (impl *interperterImpl) stepSuccess() (bool, error) { //nolint:unparam // pre-existing issue from nektos/act
+	return impl.env.Job.Status == "success", nil
+}
+
+func (impl *interperterImpl) jobFailure() (bool, error) { //nolint:unparam // pre-existing issue from nektos/act
+	jobs := impl.config.Run.Workflow.Jobs
+	jobNeeds := impl.getNeedsTransitive(impl.config.Run.Job())
+
+	for _, needs := range jobNeeds {
+		if jobs[needs].Result == "failure" {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func (impl *interperterImpl) stepFailure() (bool, error) { //nolint:unparam // pre-existing issue from nektos/act
+	return impl.env.Job.Status == "failure", nil
+}
+
+func (impl *interperterImpl) cancelled() (bool, error) { //nolint:unparam // pre-existing issue from nektos/act
+	return impl.env.Job.Status == "cancelled", nil
+}

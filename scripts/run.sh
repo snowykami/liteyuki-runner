@@ -16,6 +16,13 @@ EXTRA_ARGS=""
 if [[ ! -z "${GITEA_RUNNER_LABELS}" ]]; then
   EXTRA_ARGS="${EXTRA_ARGS} --labels ${GITEA_RUNNER_LABELS}"
 fi
+if [[ ! -z "${GITEA_RUNNER_EPHEMERAL}" ]]; then
+  EXTRA_ARGS="${EXTRA_ARGS} --ephemeral"
+fi
+RUN_ARGS=""
+if [[ ! -z "${GITEA_RUNNER_ONCE}" ]]; then
+  RUN_ARGS="${RUN_ARGS} --once"
+fi
 
 # In case no token is set, it's possible to read the token from a file, i.e. a Docker Secret
 if [[ -z "${GITEA_RUNNER_REGISTRATION_TOKEN}" ]] && [[ -f "${GITEA_RUNNER_REGISTRATION_TOKEN_FILE}" ]]; then
@@ -29,12 +36,12 @@ if [[ ! -s "$RUNNER_STATE_FILE" ]]; then
   try=$((try + 1))
   success=0
 
-  # The point of this loop is to make it simple, when running both act_runner and gitea in docker,
-  # for the act_runner to wait a moment for gitea to become available before erroring out.  Within
+  # The point of this loop is to make it simple, when running both runner and gitea in docker,
+  # for the runner to wait a moment for gitea to become available before erroring out.  Within
   # the context of a single docker-compose, something similar could be done via healthchecks, but
   # this is more flexible.
   while [[ $success -eq 0 ]] && [[ $try -lt ${GITEA_MAX_REG_ATTEMPTS:-10} ]]; do
-    act_runner register \
+    gitea-runner register \
       --instance "${GITEA_INSTANCE_URL}" \
       --token    "${GITEA_RUNNER_REGISTRATION_TOKEN}" \
       --name     "${GITEA_RUNNER_NAME:-`hostname`}" \
@@ -50,8 +57,8 @@ if [[ ! -s "$RUNNER_STATE_FILE" ]]; then
     fi
   done
 fi
-# Prevent reading the token from the act_runner process
+# Prevent reading the token from the gitea-runner process
 unset GITEA_RUNNER_REGISTRATION_TOKEN
 unset GITEA_RUNNER_REGISTRATION_TOKEN_FILE
 
-exec act_runner daemon ${CONFIG_ARG}
+exec gitea-runner daemon ${CONFIG_ARG} ${RUN_ARGS}

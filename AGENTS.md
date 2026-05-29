@@ -1,0 +1,10 @@
+- Use `make help` to find available development targets
+- Run `make fmt` to format `.go` files, and run `make lint-go` to lint them
+- Run `make tidy` after any `go.mod` changes
+- Run single go unit tests with `go test -run '^TestName$' ./modulepath/`
+- Add the current year into the copyright header of new `.go` files
+- Ensure no trailing whitespace in edited files
+- Never force-push, amend, or squash unless asked. Use new commits and normal push for pull request updates
+- Preserve existing code comments, do not remove or rewrite comments that are still relevant
+- Include authorship attribution in issue and pull request comments
+- Add `Co-Authored-By` lines to all commits, indicating name and model used

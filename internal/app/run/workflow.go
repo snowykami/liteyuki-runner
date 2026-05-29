@@ -9,9 +9,10 @@ import (
 	"sort"
 	"strings"
 
+	"gitea.com/gitea/runner/act/model"
+
 	runnerv1 "code.gitea.io/actions-proto-go/runner/v1"
-	"github.com/nektos/act/pkg/model"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v4"
 )
 
 func generateWorkflow(task *runnerv1.Task) (*model.Workflow, string, error) {

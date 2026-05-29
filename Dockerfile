@@ -1,4 +1,7 @@
-FROM reg.liteyuki.icu/dockerhub/golang:1.24-alpine AS builder
+### BUILDER STAGE
+#
+#
+FROM golang:1.26-alpine3.23 AS builder
 
 # Do not remove `git` here, it is required for getting runner version when executing `make build`
 RUN apk add --no-cache make git
@@ -6,16 +9,24 @@ RUN apk add --no-cache make git
 ARG GOPROXY
 ENV GOPROXY=${GOPROXY:-}
 
-COPY . /opt/src/act_runner
-WORKDIR /opt/src/act_runner
+COPY . /opt/src/runner
+WORKDIR /opt/src/runner
 
 RUN make clean && make build
 
-FROM reg.liteyuki.icu/dockerhub/docker:dind AS dind
+### DIND VARIANT
+#
+#
+FROM docker:29.5.2-dind AS dind
 
-RUN apk add --no-cache s6 bash git
+ARG VERSION=dev
 
-COPY --from=builder /opt/src/act_runner/act_runner /usr/local/bin/act_runner
+LABEL org.opencontainers.image.source="https://gitea.com/gitea/runner"
+LABEL org.opencontainers.image.version="${VERSION}"
+
+RUN apk add --no-cache s6 bash git tzdata
+
+COPY --from=builder /opt/src/runner/gitea-runner /usr/local/bin/gitea-runner
 COPY scripts/run.sh /usr/local/bin/run.sh
 COPY scripts/s6 /etc/s6
 
@@ -23,12 +34,20 @@ VOLUME /data
 
 ENTRYPOINT ["s6-svscan","/etc/s6"]
 
-FROM reg.liteyuki.icu/dockerhub/docker:dind-rootless AS dind-rootless
+### DIND-ROOTLESS VARIANT
+#
+#
+FROM docker:29.5.2-dind-rootless AS dind-rootless
+
+ARG VERSION=dev
+
+LABEL org.opencontainers.image.source="https://gitea.com/gitea/runner"
+LABEL org.opencontainers.image.version="${VERSION}"
 
 USER root
-RUN apk add --no-cache s6 bash git
+RUN apk add --no-cache s6 bash git tzdata
 
-COPY --from=builder /opt/src/act_runner/act_runner /usr/local/bin/act_runner
+COPY --from=builder /opt/src/runner/gitea-runner /usr/local/bin/gitea-runner
 COPY scripts/run.sh /usr/local/bin/run.sh
 COPY scripts/s6 /etc/s6
 
@@ -41,13 +60,20 @@ ENV DOCKER_HOST=unix:///run/user/1000/docker.sock
 USER rootless
 ENTRYPOINT ["s6-svscan","/etc/s6"]
 
-FROM reg.liteyuki.icu/dockerhub/alpine AS basic
-RUN apk add --no-cache tini bash git
+### BASIC VARIANT
+#
+#
+FROM alpine:3.23 AS basic
 
-COPY --from=builder /opt/src/act_runner/act_runner /usr/local/bin/act_runner
+ARG VERSION=dev
+
+LABEL org.opencontainers.image.source="https://gitea.com/gitea/runner"
+LABEL org.opencontainers.image.version="${VERSION}"
+
+RUN apk add --no-cache tini bash git tzdata
+
+COPY --from=builder /opt/src/runner/gitea-runner /usr/local/bin/gitea-runner
 COPY scripts/run.sh /usr/local/bin/run.sh
-
-VOLUME /var/run/docker.sock
 
 VOLUME /data
 

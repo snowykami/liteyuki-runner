@@ -1,0 +1,34 @@
+on: push
+
+defaults:
+  run:
+    working-directory: /tmp
+
+jobs:
+  workdir:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: /root
+    steps:
+      - run: '[[ "$(pwd)" == "/root" ]]'
+
+      - run: mkdir -p "${GITHUB_WORKSPACE}/workdir"
+
+      - run: '[[ "$(pwd)" == "${GITHUB_WORKSPACE}/workdir" ]]'
+        working-directory: workdir
+
+  top-level-workdir:
+    runs-on: ubuntu-latest
+    steps:
+      - run: '[[ "$(pwd)" == "/tmp" ]]'
+
+  workdir-from-matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
+      matrix:
+        work_dir: ["/tmp", "/root"]
+    steps:
+      - run: '[[ "$(pwd)" == "${{ matrix.work_dir }}" ]]'
+        working-directory: ${{ matrix.work_dir }}

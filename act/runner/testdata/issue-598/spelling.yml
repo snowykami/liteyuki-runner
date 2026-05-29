@@ -1,0 +1,21 @@
+name: issue-598
+on: push
+
+
+jobs:
+  my_first_job:
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: My first false step
+        if: "endsWith('Hello world', 'o1')"
+        run: exit 1
+      - name: My first true step
+        if: "!endsWith('Hello world', 'od')"
+        run: echo "Renst the Octocat"
+      - name: My second false step
+        if: "endsWith('Hello world', 'o2')"
+        run: exit 1
+      - name: My third false step
+        if: "endsWith('Hello world', 'o2')"
+        run: exit 1

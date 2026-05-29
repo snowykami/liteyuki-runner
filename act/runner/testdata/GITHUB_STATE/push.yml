@@ -1,0 +1,31 @@
+on: push
+jobs:
+  # State saved in main (via the $GITHUB_STATE file and the ::save-state command) must surface
+  # as $STATE_* in the action's post step.
+  _:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: ./actions/script
+      with:
+        main: |
+          echo mystate2=mystateval > $GITHUB_STATE
+          echo "::save-state name=mystate3::mystateval"
+        post: |
+          [ "$STATE_mystate2" = "mystateval" ]
+          [ "$STATE_mystate3" = "mystateval" ]
+  # State must be isolated per action instance even when two steps use the same action.
+  test-id-collision-bug:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: ./actions/script
+      id: script
+      with:
+        main: echo mystate=val1 > $GITHUB_STATE
+        post: '[ "$STATE_mystate" = "val1" ]'
+    - uses: ./actions/script
+      id: pre-script
+      with:
+        main: echo mystate=val2 > $GITHUB_STATE
+        post: '[ "$STATE_mystate" = "val2" ]'

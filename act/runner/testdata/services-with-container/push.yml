@@ -1,0 +1,15 @@
+name: services-with-containers
+on: push
+jobs:
+  services-with-containers:
+    runs-on: ubuntu-latest
+    # https://docs.github.com/en/actions/using-containerized-services/about-service-containers#running-jobs-in-a-container
+    container:
+      image: "node:24-bookworm-slim"
+    services:
+      nginx:
+        image: "nginx:alpine"
+    steps:
+      - run: apt-get -qq update && apt-get -yqq install --no-install-recommends curl
+      # reach the service over the shared job network by its alias, no host port needed
+      - run: curl -v http://nginx:80

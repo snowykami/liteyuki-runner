@@ -1,0 +1,23 @@
+name: uses-docker-url
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker://node:24-bookworm-slim
+        with:
+          somekey: somevalue
+          args: echo ${INPUT_SOMEKEY} | grep somevalue
+      - uses: docker://node:24-bookworm-slim
+        with:
+          args: -v
+      - uses: docker://node:24-bookworm-slim
+        with:
+          entrypoint: /bin/sh
+          args: -c -- uname -a
+      - uses: docker://node:24-bookworm-slim
+        with:
+          entrypoint: /bin/sh
+          args: -c 'uname -a'
+

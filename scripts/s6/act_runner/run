@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-
-s6-svwait -U /etc/s6/docker
-
-exec run.sh

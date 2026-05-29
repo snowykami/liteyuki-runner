@@ -1,0 +1,30 @@
+name: container-hostname
+on: push
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  with-hostname:
+    runs-on: ubuntu-latest
+    container:
+      image: node:24-bookworm-slim
+      options: "--hostname my.host.local --user 100:101"
+    steps:
+      - run: |
+          echo "UID: $(id -u)"
+          echo "GID: $(id -g)"
+          echo "HOST: $(uname -n)"
+          [[ "$(id -u)" == "100" ]] && [[ "$(id -g)" == "101" ]] && [[ "$(uname -n)" == "my.host.local" ]]
+
+  default-hostname:
+    runs-on: ubuntu-latest
+    container:
+      image: node:24-bookworm-slim
+    steps:
+      - run: |
+          echo "UID: $(id -u)"
+          echo "GID: $(id -g)"
+          echo "HOST: $(uname -n)"
+          [[ "$(id -u)" == "0" ]] && [[ "$(id -g)" == "0" ]] && [[ $(uname -n) ]] && [[ "$(uname -n)" != "my.host.local" ]]

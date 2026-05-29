@@ -1,0 +1,27 @@
+name: pr-title
+
+on:
+  pull_request:
+    types:
+    - opened
+    - edited
+    - reopened
+    - synchronize
+    - ready_for_review
+
+permissions:
+  contents: read
+
+jobs:
+  lint-pr-title:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+    - uses: actions/checkout@v6
+    - uses: actions/setup-node@v6
+      with:
+        node-version: 24
+    - run: make lint-pr-title
+      env:
+        PR_TITLE: ${{ github.event.pull_request.title }}

@@ -6,20 +6,25 @@ package cmd
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
+	"errors"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/docker/docker/api/types/container"
+	"gitea.com/gitea/runner/act/artifactcache"
+	"gitea.com/gitea/runner/act/artifacts"
+	"gitea.com/gitea/runner/act/common"
+	"gitea.com/gitea/runner/act/model"
+	"gitea.com/gitea/runner/act/runner"
+
 	"github.com/joho/godotenv"
-	"github.com/nektos/act/pkg/artifactcache"
-	"github.com/nektos/act/pkg/artifacts"
-	"github.com/nektos/act/pkg/common"
-	"github.com/nektos/act/pkg/model"
-	"github.com/nektos/act/pkg/runner"
+	"github.com/moby/moby/api/types/container"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
@@ -39,6 +44,7 @@ type executeArgs struct {
 	envs                  []string
 	envfile               string
 	secrets               []string
+	vars                  []string
 	defaultActionsURL     string
 	insecureSecrets       bool
 	privileged            bool
@@ -76,7 +82,7 @@ func (i *executeArgs) LoadSecrets() map[string]string {
 	for _, secretPair := range i.secrets {
 		secretPairParts := strings.SplitN(secretPair, "=", 2)
 		secretPairParts[0] = strings.ToUpper(secretPairParts[0])
-		if strings.ToUpper(s[secretPairParts[0]]) == secretPairParts[0] {
+		if strings.EqualFold(s[secretPairParts[0]], secretPairParts[0]) {
 			log.Errorf("Secret %s is already defined (secrets are case insensitive)", secretPairParts[0])
 		}
 		if len(secretPairParts) == 2 {
@@ -103,9 +109,7 @@ func readEnvs(path string, envs map[string]string) bool {
 		if err != nil {
 			log.Fatalf("Error loading from %s: %v", path, err)
 		}
-		for k, v := range env {
-			envs[k] = v
-		}
+		maps.Copy(envs, env)
 		return true
 	}
 	return false
@@ -130,6 +134,22 @@ func (i *executeArgs) LoadEnvs() map[string]string {
 	return envs
 }
 
+func (i *executeArgs) LoadVars() map[string]string {
+	vars := make(map[string]string)
+	if i.vars != nil {
+		for _, runVar := range i.vars {
+			e := strings.SplitN(runVar, `=`, 2)
+			if len(e) == 2 {
+				vars[e[0]] = e[1]
+			} else {
+				vars[e[0]] = ""
+			}
+		}
+	}
+
+	return vars
+}
+
 // Workdir returns path to workdir
 func (i *executeArgs) Workdir() string {
 	return i.resolve(".")
@@ -149,7 +169,7 @@ func (i *executeArgs) resolve(path string) string {
 	return path
 }
 
-func printList(plan *model.Plan) error {
+func printList(plan *model.Plan) {
 	type lineInfoDef struct {
 		jobID   string
 		jobName string
@@ -244,10 +264,9 @@ func printList(plan *model.Plan) error {
 	if duplicateJobIDs {
 		fmt.Print("\nDetected multiple jobs with the same job name, use `-W` to specify the path to the specific workflow.\n")
 	}
-	return nil
 }
 
-func runExecList(ctx context.Context, planner model.WorkflowPlanner, execArgs *executeArgs) error {
+func runExecList(planner model.WorkflowPlanner, execArgs *executeArgs) error {
 	// plan with filtered jobs - to be used for filtering only
 	var filterPlan *model.Plan
 
@@ -289,7 +308,7 @@ func runExecList(ctx context.Context, planner model.WorkflowPlanner, execArgs *e
 		}
 	}
 
-	_ = printList(filterPlan)
+	printList(filterPlan)
 
 	return nil
 }
@@ -302,7 +321,7 @@ func runExec(ctx context.Context, execArgs *executeArgs) func(cmd *cobra.Command
 		}
 
 		if execArgs.runList {
-			return runExecList(ctx, planner, execArgs)
+			return runExecList(planner, execArgs)
 		}
 
 		// plan with triggered jobs
@@ -351,7 +370,7 @@ func runExec(ctx context.Context, execArgs *executeArgs) func(cmd *cobra.Command
 		}
 
 		// init a cache server
-		handler, err := artifactcache.StartHandler("", "", 0, log.StandardLogger().WithField("module", "cache_request"))
+		handler, err := artifactcache.StartHandler("", "", 0, "", log.StandardLogger().WithField("module", "cache_request"))
 		if err != nil {
 			return err
 		}
@@ -361,7 +380,7 @@ func runExec(ctx context.Context, execArgs *executeArgs) func(cmd *cobra.Command
 		if len(execArgs.artifactServerAddr) == 0 {
 			ip := common.GetOutboundIP()
 			if ip == nil {
-				return fmt.Errorf("unable to determine outbound IP address")
+				return errors.New("unable to determine outbound IP address")
 			}
 			execArgs.artifactServerAddr = ip.String()
 		}
@@ -376,6 +395,25 @@ func runExec(ctx context.Context, execArgs *executeArgs) func(cmd *cobra.Command
 			execArgs.artifactServerPath = tempDir
 		}
 
+		// Register ACTIONS_RUNTIME_TOKEN against local cache server
+		env := execArgs.LoadEnvs()
+		const actionsRuntimeTokenEnvName = "ACTIONS_RUNTIME_TOKEN"
+		actionsRuntimeToken := env[actionsRuntimeTokenEnvName]
+		if actionsRuntimeToken == "" {
+			actionsRuntimeToken = os.Getenv(actionsRuntimeTokenEnvName)
+		}
+		if actionsRuntimeToken == "" {
+			tmpBranch := make([]byte, 12)
+			if _, err := rand.Read(tmpBranch); err != nil {
+				actionsRuntimeToken = "token"
+			} else {
+				actionsRuntimeToken = hex.EncodeToString(tmpBranch)
+			}
+			env[actionsRuntimeTokenEnvName] = actionsRuntimeToken
+			os.Setenv(actionsRuntimeTokenEnvName, actionsRuntimeToken)
+		}
+		handler.RegisterJob(actionsRuntimeToken, "__local/__exec")
+
 		// run the plan
 		config := &runner.Config{
 			Workdir:               execArgs.Workdir(),
@@ -385,7 +423,8 @@ func runExec(ctx context.Context, execArgs *executeArgs) func(cmd *cobra.Command
 			ForceRebuild:          execArgs.forceRebuild,
 			LogOutput:             true,
 			JSONLogger:            execArgs.jsonLogger,
-			Env:                   execArgs.LoadEnvs(),
+			Env:                   env,
+			Vars:                  execArgs.LoadVars(),
 			Secrets:               execArgs.LoadSecrets(),
 			InsecureSecrets:       execArgs.insecureSecrets,
 			Privileged:            execArgs.privileged,
@@ -404,7 +443,7 @@ func runExec(ctx context.Context, execArgs *executeArgs) func(cmd *cobra.Command
 			NoSkipCheckout:        execArgs.noSkipCheckout,
 			// PresetGitHubContext:   preset,
 			// EventJSON:             string(eventJSON),
-			ContainerNamePrefix:   fmt.Sprintf("GITEA-ACTIONS-TASK-%s", eventName),
+			ContainerNamePrefix:   "GITEA-ACTIONS-TASK-" + eventName,
 			ContainerMaxLifetime:  maxLifetime,
 			ContainerNetworkMode:  container.NetworkMode(execArgs.network),
 			DefaultActionInstance: execArgs.defaultActionsURL,
@@ -468,6 +507,7 @@ func loadExecCmd(ctx context.Context) *cobra.Command {
 	execCmd.Flags().StringArrayVarP(&execArg.envs, "env", "", []string{}, "env to make available to actions with optional value (e.g. --env myenv=foo or --env myenv)")
 	execCmd.PersistentFlags().StringVarP(&execArg.envfile, "env-file", "", ".env", "environment file to read and use as env in the containers")
 	execCmd.Flags().StringArrayVarP(&execArg.secrets, "secret", "s", []string{}, "secret to make available to actions with optional value (e.g. -s mysecret=foo or -s mysecret)")
+	execCmd.Flags().StringArrayVarP(&execArg.vars, "var", "", []string{}, "variable to make available to actions with optional value (e.g. --var myvar=foo or --var myvar)")
 	execCmd.PersistentFlags().BoolVarP(&execArg.insecureSecrets, "insecure-secrets", "", false, "NOT RECOMMENDED! Doesn't hide secrets while printing logs.")
 	execCmd.Flags().BoolVar(&execArg.privileged, "privileged", false, "use privileged mode")
 	execCmd.Flags().StringVar(&execArg.usernsMode, "userns", "", "user namespace to use")

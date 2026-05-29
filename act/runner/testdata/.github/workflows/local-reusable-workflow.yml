@@ -1,0 +1,34 @@
+name: local-reusable-workflow
+on:
+  workflow_call:
+    inputs:
+      string_required:
+        required: true
+        type: string
+      bool_required:
+        required: true
+        type: boolean
+      number_required:
+        required: true
+        type: number
+    secrets:
+      secret:
+        required: true
+    outputs:
+      output:
+        value: ${{ jobs.reusable.outputs.output }}
+
+jobs:
+  reusable:
+    runs-on: ubuntu-latest
+    outputs:
+      output: ${{ steps.gen.outputs.output }}
+    steps:
+      - name: check inputs and secret arrived
+        run: |
+          [ "${{ inputs.string_required }}" = "string" ]
+          [ "${{ inputs.bool_required }}" = "true" ]
+          [ "${{ inputs.number_required }}" = "1" ]
+          [ "${{ secrets.secret }}" = "keep_it_private" ]
+      - id: gen
+        run: echo "output=${{ inputs.string_required }}" >> $GITHUB_OUTPUT

@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+while [ ! -d /etc/s6/docker/supervise ]; do
+    sleep 0.1
+done
+
+s6-svwait -U /etc/s6/docker
+
+exec run.sh

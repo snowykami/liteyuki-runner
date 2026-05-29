@@ -1,0 +1,193 @@
+// Copyright 2022 The Gitea Authors. All rights reserved.
+// Copyright 2020 The nektos/act Authors. All rights reserved.
+// SPDX-License-Identifier: MIT
+
+package runner
+
+import (
+	"bytes"
+	"context"
+	"io"
+	"os"
+	"testing"
+
+	"gitea.com/gitea/runner/act/common"
+	"gitea.com/gitea/runner/act/model"
+
+	"github.com/sirupsen/logrus/hooks/test"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestSetEnv(t *testing.T) {
+	a := assert.New(t)
+	ctx := context.Background()
+	rc := new(RunContext)
+	handler := rc.commandHandler(ctx)
+
+	handler("::set-env name=x::valz\n")
+	a.Equal("valz", rc.Env["x"])
+}
+
+func TestSetOutput(t *testing.T) {
+	a := assert.New(t)
+	ctx := context.Background()
+	rc := new(RunContext)
+	rc.StepResults = make(map[string]*model.StepResult)
+	handler := rc.commandHandler(ctx)
+
+	rc.CurrentStep = "my-step"
+	rc.StepResults[rc.CurrentStep] = &model.StepResult{
+		Outputs: make(map[string]string),
+	}
+	handler("::set-output name=x::valz\n")
+	a.Equal("valz", rc.StepResults["my-step"].Outputs["x"])
+
+	handler("::set-output name=x::percent2%25\n")
+	a.Equal("percent2%", rc.StepResults["my-step"].Outputs["x"])
+
+	handler("::set-output name=x::percent2%25%0Atest\n")
+	a.Equal("percent2%\ntest", rc.StepResults["my-step"].Outputs["x"])
+
+	handler("::set-output name=x::percent2%25%0Atest another3%25test\n")
+	a.Equal("percent2%\ntest another3%test", rc.StepResults["my-step"].Outputs["x"])
+
+	handler("::set-output name=x%3A::percent2%25%0Atest\n")
+	a.Equal("percent2%\ntest", rc.StepResults["my-step"].Outputs["x:"])
+
+	handler("::set-output name=x%3A%2C%0A%25%0D%3A::percent2%25%0Atest\n")
+	a.Equal("percent2%\ntest", rc.StepResults["my-step"].Outputs["x:,\n%\r:"])
+}
+
+func TestAddpath(t *testing.T) {
+	a := assert.New(t)
+	ctx := context.Background()
+	rc := new(RunContext)
+	handler := rc.commandHandler(ctx)
+
+	handler("::add-path::/zoo\n")
+	a.Equal("/zoo", rc.ExtraPath[0])
+
+	handler("::add-path::/boo\n")
+	a.Equal("/boo", rc.ExtraPath[0])
+}
+
+func TestStopCommands(t *testing.T) {
+	logger, hook := test.NewNullLogger()
+
+	a := assert.New(t)
+	ctx := common.WithLogger(context.Background(), logger)
+	rc := new(RunContext)
+	handler := rc.commandHandler(ctx)
+
+	handler("::set-env name=x::valz\n")
+	a.Equal("valz", rc.Env["x"])
+	handler("::stop-commands::my-end-token\n")
+	handler("::set-env name=x::abcd\n")
+	a.Equal("valz", rc.Env["x"])
+	handler("::my-end-token::\n")
+	handler("::set-env name=x::abcd\n")
+	a.Equal("abcd", rc.Env["x"])
+
+	messages := make([]string, 0)
+	for _, entry := range hook.AllEntries() {
+		messages = append(messages, entry.Message)
+	}
+
+	a.Contains(messages, "::set-env name=x::abcd\n")
+}
+
+func TestAddpathADO(t *testing.T) {
+	a := assert.New(t)
+	ctx := context.Background()
+	rc := new(RunContext)
+	handler := rc.commandHandler(ctx)
+
+	handler("##[add-path]/zoo\n")
+	a.Equal("/zoo", rc.ExtraPath[0])
+
+	handler("##[add-path]/boo\n")
+	a.Equal("/boo", rc.ExtraPath[0])
+}
+
+func TestAddmask(t *testing.T) {
+	logger, hook := test.NewNullLogger()
+
+	a := assert.New(t)
+	ctx := context.Background()
+	loggerCtx := common.WithLogger(ctx, logger)
+
+	rc := new(RunContext)
+	handler := rc.commandHandler(loggerCtx)
+	handler("::add-mask::my-secret-value\n")
+
+	a.Equal("***", hook.LastEntry().Message)
+	a.NotEqual("*my-secret-value", hook.LastEntry().Message)
+}
+
+// based on https://stackoverflow.com/a/10476304
+func captureOutput(t *testing.T, f func()) string {
+	old := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	f()
+
+	outC := make(chan string)
+
+	go func() {
+		var buf bytes.Buffer
+		_, err := io.Copy(&buf, r)
+		if err != nil {
+			a := assert.New(t)
+			a.Fail("io.Copy failed")
+		}
+		outC <- buf.String()
+	}()
+
+	w.Close()
+	os.Stdout = old
+	out := <-outC
+
+	return out
+}
+
+func TestAddmaskUsemask(t *testing.T) {
+	rc := new(RunContext)
+	rc.StepResults = make(map[string]*model.StepResult)
+	rc.CurrentStep = "my-step"
+	rc.StepResults[rc.CurrentStep] = &model.StepResult{
+		Outputs: make(map[string]string),
+	}
+
+	a := assert.New(t)
+
+	config := &Config{
+		Secrets:         map[string]string{},
+		InsecureSecrets: false,
+	}
+
+	re := captureOutput(t, func() {
+		ctx := context.Background()
+		ctx = WithJobLogger(ctx, "0", "testjob", config, &rc.Masks, map[string]any{})
+
+		handler := rc.commandHandler(ctx)
+		handler("::add-mask::secret\n")
+		handler("::set-output:: token=secret\n")
+	})
+
+	a.Equal("[testjob] ***\n[testjob] ::set-output:: = token=***\n", re)
+}
+
+func TestSaveState(t *testing.T) {
+	rc := &RunContext{
+		CurrentStep: "step",
+		StepResults: map[string]*model.StepResult{},
+	}
+
+	ctx := context.Background()
+
+	handler := rc.commandHandler(ctx)
+	handler("::save-state name=state-name::state-value\n")
+
+	assert.Equal(t, "state-value", rc.IntraActionState["step"]["state-name"])
+}
